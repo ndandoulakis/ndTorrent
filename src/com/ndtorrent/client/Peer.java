@@ -303,6 +303,9 @@ public final class Peer extends Thread {
 	}
 
 	private void requestMoreBlocks() {
+		// Blocks of the same piece can be requested from different channels.
+		// The number of channels that will contribute to a particular piece
+		// depends on how many requests each channel can pipeline.
 		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
 		for (SelectionKey key : channel_selector.selectedKeys()) {
 			if (!key.isValid() || !key.isWritable())
@@ -332,6 +335,8 @@ public final class Peer extends Thread {
 		// The list of pieces is partitioned in 10 overlapped segments,
 		// which are traversed in random order. From the first segment
 		// with available pieces the least common piece is selected.
+		// This algorithm does not select a piece that has the global
+		// minimum availability, but a local one instead.
 
 		Integer[] segments = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 		Collections.shuffle(Arrays.asList(segments));

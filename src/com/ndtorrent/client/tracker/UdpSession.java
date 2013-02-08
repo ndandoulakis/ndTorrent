@@ -33,12 +33,12 @@ public final class UdpSession extends Session {
 	DatagramSocket socket;
 	ByteBuffer request = ByteBuffer.allocate(MAX_REQUEST_LENGTH);
 	ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
-	int received_bytes;
+	int received_length;
 
 	int timeStep = 1;
 	int transaction_id = -1;
 	long connection_id = -1;
-	long expire_time = 0; // immune to system's real-time clock adjustments
+	long expire_time = 0;
 
 	URI tracker;
 
@@ -99,7 +99,7 @@ public final class UdpSession extends Session {
 	public Collection<InetSocketAddress> getPeers() {
 		ArrayList<InetSocketAddress> result = new ArrayList<InetSocketAddress>();
 
-		for (int ofs = 20; ofs < received_bytes; ofs += 6) {
+		for (int ofs = 20; ofs < received_length; ofs += 6) {
 			if (ofs + 6 > MAX_RESPONSE_LENGTH)
 				break;
 
@@ -157,7 +157,7 @@ public final class UdpSession extends Session {
 						resBlock.length);
 				socket.setSoTimeout(timeout * 1000);
 				socket.receive(in);
-				received_bytes = in.getLength();
+				received_length = in.getLength();
 			} catch (SocketTimeoutException e) {
 			}
 

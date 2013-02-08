@@ -15,39 +15,35 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.ndtorrent.client.Bdecoder;
+import com.ndtorrent.client.ClientInfo;
 
 public final class HttpSession extends Session {
 
 	// Implements the HTTP tracker protocol
 
-	String tracker;
+	private String tracker;
+	private SortedMap<String, Object> response = new TreeMap<String, Object>();
 
-	String tracker_id;
-
-	SortedMap<String, Object> response = new TreeMap<String, Object>();
-
-	public HttpSession(String url) {
-		if (url.startsWith("http"))
-			this.tracker = url;
+	protected HttpSession(String url, ClientInfo client_info, String info_hash) {
+		super(info_hash, client_info, info_hash);
+		tracker = url;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void update() {
+	public void update(Event event, long uploaded, long downloaded, long left) {
 		URLConnection conn = null;
 
 		try {
-			String escapedId = URLEncoder
-					.encode(params.client_id, "ISO-8859-1");
-
-			String escapedHash = URLEncoder.encode(params.info_hash,
+			String escapedId = URLEncoder.encode(client_info.getID(),
 					"ISO-8859-1");
+
+			String escapedHash = URLEncoder.encode(info_hash, "ISO-8859-1");
 
 			String query = String
 					.format("?peer_id=%s&port=%d&info_hash=%s&event=%s&uploaded=%d&downloaded=%d&left=%d&no_peer_id=1&compact=1",
-							escapedId, params.client_port, escapedHash,
-							params.event, params.uploaded, params.downloaded,
-							params.left);
+							escapedId, client_info.getPort(), escapedHash,
+							event, uploaded, downloaded, left);
 
 			if (tracker_id != null) {
 				query = query + "&trackerid="
@@ -76,12 +72,12 @@ public final class HttpSession extends Session {
 	}
 
 	@Override
-	public boolean validResponse() {
+	public boolean isValidResponse() {
 		return !response.isEmpty();
 	}
 
 	@Override
-	public boolean trackerError() {
+	public boolean isTrackerError() {
 		return response.containsKey("failure reason");
 	}
 

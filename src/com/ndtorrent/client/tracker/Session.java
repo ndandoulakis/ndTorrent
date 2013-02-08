@@ -6,6 +6,8 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
+import com.ndtorrent.client.ClientInfo;
+
 // TODO a client can be directed to use UDP instead of HTTP in
 // an old torrent where only the previous service are listed.
 // Such an example is "http://tracker.openbittorrent.com:80/announce"
@@ -14,23 +16,33 @@ import java.util.Collection;
 
 public abstract class Session {
 
-	public final Announce params = new Announce();
+	protected ClientInfo client_info;
+	protected String info_hash;
 
-	public static final Session create(String url) {
+	protected String tracker_id;
+
+	protected Session(String url, ClientInfo client_info, String info_hash) {
+		this.client_info = client_info;
+		this.info_hash = info_hash;
+	}
+
+	public static final Session create(String url, ClientInfo client_info,
+			String info_hash) {
 		if (url != null)
 			if (url.startsWith("udp"))
-				return new UdpSession(url);
+				return new UdpSession(url, client_info, info_hash);
 			else if (url.startsWith("http"))
-				return new HttpSession(url);
+				return new HttpSession(url, client_info, info_hash);
 
 		return null;
 	}
 
-	public abstract void update();
+	public abstract void update(Event event, long uploaded, long downloaded,
+			long left);
 
-	public abstract boolean validResponse();
+	public abstract boolean isValidResponse();
 
-	public abstract boolean trackerError();
+	public abstract boolean isTrackerError();
 
 	public abstract int getInterval();
 
@@ -52,49 +64,6 @@ public abstract class Session {
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			return null;
-		}
-	}
-
-	public class Announce {
-		public String info_hash;
-		public String client_id;
-		public long downloaded;
-		public long left;
-		public long uploaded;
-		public Event event;
-		public int client_ip;
-		public int key;
-		public int num_want = -1;
-		public int client_port;
-	}
-
-	public enum Event {
-		NONE, COMPLETED, STARTED, STOPPED;
-
-		public Integer toInteger() {
-			switch (this) {
-			case COMPLETED:
-				return 1;
-			case STARTED:
-				return 2;
-			case STOPPED:
-				return 3;
-			default:
-				return 0;
-			}
-		}
-
-		public String toString() {
-			switch (this) {
-			case COMPLETED:
-				return "completed";
-			case STARTED:
-				return "started";
-			case STOPPED:
-				return "stopped";
-			default:
-				return "";
-			}
 		}
 	}
 

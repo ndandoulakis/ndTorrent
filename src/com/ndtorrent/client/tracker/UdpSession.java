@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Random;
 
+import com.ndtorrent.client.ClientInfo;
+
 public final class UdpSession extends Session {
 
 	// Implements the UDP tracker protocol
@@ -23,38 +25,52 @@ public final class UdpSession extends Session {
 	static final int ACTION_ERROR = 3;
 	static final int ACTION_ERROR_LE = 0x03000000;
 
+	static final int REQUEST_BODY_LENGTH = 82;
 	static final int MAX_REQUEST_LENGTH = 100;
 	static final int MAX_RESPONSE_LENGTH = 1500;
 	static final int MAX_TIMEOUT = 2 * 60;
 	static final int DEFAULT_PORT = 80;
 
-	Random random = new Random();
+	private Random random = new Random();
 
-	DatagramSocket socket;
-	ByteBuffer request = ByteBuffer.allocate(MAX_REQUEST_LENGTH);
-	ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
-	int received_length;
+	private DatagramSocket socket;
+	private ByteBuffer request_body;
+	private ByteBuffer request = ByteBuffer.allocate(MAX_REQUEST_LENGTH);
+	private ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
+	private int received_length;
 
-	int timeStep = 1;
-	int transaction_id = -1;
-	long connection_id = -1;
-	long expire_time = 0;
+	private int timeStep = 1;
+	private int transaction_id = -1;
+	private long connection_id = -1;
+	private long expire_time = 0;
 
-	URI tracker;
+	private URI tracker;
 
-	public UdpSession(String url) {
+	public UdpSession(String url, ClientInfo client_info, String info_hash) {
+		super(info_hash, client_info, info_hash);
 		try {
-			if (url.startsWith("udp"))
-				tracker = new URI(url);
+			tracker = new URI(url);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	@Override
-	public void update() {
+	public void update(Event event, long uploaded, long downloaded, long left) {
+		request_body = ByteBuffer.allocate(REQUEST_BODY_LENGTH);
 		timeStep = 1;
 		try {
+			request_body.put(info_hash.getBytes("ISO-8859-1"));
+			request_body.put(client_info.getID().getBytes("ISO-8859-1"));
+			request_body.putLong(downloaded);
+			request_body.putLong(left);
+			request_body.putLong(uploaded);
+			request_body.putInt(event.toInteger());
+			request_body.putInt(0); // IP
+			request_body.putInt(0); // key
+			request_body.putInt(-1); // num_want
+			request_body.putShort((short) client_info.getPort());
+
 			socket = new DatagramSocket();
 			performAction(ACTION_ANNOUNCE);
 
@@ -69,14 +85,14 @@ public final class UdpSession extends Session {
 	}
 
 	@Override
-	public boolean validResponse() {
+	public boolean isValidResponse() {
 		return response.getInt(4) == transaction_id;
 	}
 
 	@Override
-	public boolean trackerError() {
+	public boolean isTrackerError() {
 		int action = response.getInt(0);
-		return validResponse()
+		return isValidResponse()
 				&& (action == ACTION_ERROR || action == ACTION_ERROR_LE);
 	}
 
@@ -131,16 +147,8 @@ public final class UdpSession extends Session {
 			request.putInt(transaction_id);
 
 			if (action == ACTION_ANNOUNCE) {
-				request.put(params.info_hash.getBytes("ISO-8859-1"));
-				request.put(params.client_id.getBytes("ISO-8859-1"));
-				request.putLong(params.downloaded);
-				request.putLong(params.left);
-				request.putLong(params.uploaded);
-				request.putInt(params.event.toInteger());
-				request.putInt(params.client_ip);
-				request.putInt(params.key);
-				request.putInt(params.num_want);
-				request.putShort((short) params.client_port);
+				request_body.rewind();
+				request.put(request_body);
 			}
 
 			byte[] reqBlock = request.array();
@@ -161,7 +169,7 @@ public final class UdpSession extends Session {
 			} catch (SocketTimeoutException e) {
 			}
 
-		} while (!validResponse());
+		} while (!isValidResponse());
 
 		timeStep = 1;
 

@@ -5,10 +5,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 public final class PeerChannel {
-	// A small number of pipelined requests, i.e. 10, gives bad download
-	// results even on local connections! uTorrent seems to have a limit
-	// of 255 pipelined requests, and discards requests above the limit.
-	private static final int MAX_PIPELINED_REQUESTS = 255;
+	private static final int MIN_REQUESTS = 10;
+	private static final int MAX_REQUESTS = 255;
 
 	public BTSocket socket;
 
@@ -71,13 +69,17 @@ public final class PeerChannel {
 	public boolean participatedIn(int piece_index) {
 		return participated.get(piece_index);
 	}
-	
+
 	public boolean hasPiece(int index) {
 		return bitfield.get(index);
 	}
 
 	public boolean canRequestMore() {
-		return unfulfilled.size() < MAX_PIPELINED_REQUESTS;
+		// A small number of pipelined requests, i.e. 10, on fast channels,
+		// can result to bad download rates even on local connections!
+		// TODO the number of pipelined requests should adjust dynamically
+		// depending on the download speed.
+		return unfulfilled.size() < MAX_REQUESTS;
 	}
 
 	public void getRequested(BitSet requested, int piece_index, int block_length) {

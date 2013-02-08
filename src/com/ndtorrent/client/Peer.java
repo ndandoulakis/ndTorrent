@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import com.ndtorrent.client.tracker.Event;
 import com.ndtorrent.client.tracker.Session;
 
 public final class Peer extends Thread {
@@ -292,7 +293,7 @@ public final class Peer extends Thread {
 		// LEECHER MODE
 		// regular if is_interested and fast upload rate
 
-		//System.out.println("regular unchoking");
+		// System.out.println("regular unchoking");
 	}
 
 	private void optimisticUnchoking() {
@@ -396,17 +397,11 @@ public final class Peer extends Thread {
 
 		String url = "udp://tracker.openbittorrent.com:80/announce";
 
-		Session session = Session.create(url);
-		session.params.info_hash = meta.getInfoHash();
-		session.params.client_id = client_info.getID();
-		session.params.client_port = client_info.getPort();
-		session.params.left = torrent.getRemainingLength();
-		session.params.event = Session.Event.STARTED;
+		Session session = Session.create(url, client_info, meta.getInfoHash());
+		session.update(Event.STARTED, 0, 0, torrent.getRemainingLength());
 
-		session.update();
-
-		if (session.validResponse()) {
-			if (session.trackerError())
+		if (session.isValidResponse()) {
+			if (session.isTrackerError())
 				System.out.println("tracker error!");
 			else {
 				System.out.println(session.getLeechers());

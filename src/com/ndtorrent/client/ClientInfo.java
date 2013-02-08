@@ -9,11 +9,11 @@ public interface ClientInfo {
 	public int getPort();
 
 	// public void getKey();
-	
+
 	public String getStorageLocation();
-	
+
 	// public int maxOutgoingConnections();
-	
+
 	// public int maxIncomingConnections();
 
 }

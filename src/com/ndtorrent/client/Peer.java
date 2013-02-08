@@ -121,7 +121,7 @@ public final class Peer extends Thread {
 			if (key.isReadable() && socket.hasInputHandshake()) {
 				key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
 			}
-			if (!socket.hasOutputHandshake()) {
+			if (key.isWritable() && !socket.hasOutputHandshake()) {
 				// We assume that socket's send buffer is empty at this
 				// phase, and the whole handshake message will be written.
 				key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);

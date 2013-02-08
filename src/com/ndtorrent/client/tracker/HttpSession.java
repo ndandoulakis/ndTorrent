@@ -22,16 +22,19 @@ public final class HttpSession extends Session {
 	// Implements the HTTP tracker protocol
 
 	private String tracker;
+	private String tracker_id;
 	private SortedMap<String, Object> response = new TreeMap<String, Object>();
 
 	protected HttpSession(String url, ClientInfo client_info, String info_hash) {
-		super(info_hash, client_info, info_hash);
+		super(client_info, info_hash);
 		tracker = url;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
+		// TODO check if previous response is still running; new Thread
+
 		URLConnection conn = null;
 
 		try {

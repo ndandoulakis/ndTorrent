@@ -25,7 +25,7 @@ public final class UdpSession extends Session {
 	static final int ACTION_ERROR = 3;
 	static final int ACTION_ERROR_LE = 0x03000000;
 
-	static final int REQUEST_BODY_LENGTH = 82;
+	static final int REQUEST_BODY_LENGTH = 2 * 20 + 3 * 8 + 4 * 4 + 2;
 	static final int MAX_REQUEST_LENGTH = 100;
 	static final int MAX_RESPONSE_LENGTH = 1500;
 	static final int MAX_TIMEOUT = 2 * 60;
@@ -47,7 +47,7 @@ public final class UdpSession extends Session {
 	private URI tracker;
 
 	public UdpSession(String url, ClientInfo client_info, String info_hash) {
-		super(info_hash, client_info, info_hash);
+		super(client_info, info_hash);
 		try {
 			tracker = new URI(url);
 		} catch (Exception e) {

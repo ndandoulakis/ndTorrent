@@ -14,14 +14,12 @@ import com.ndtorrent.client.ClientInfo;
 // See "DNS Tracker Preferences"
 // http://bittorrent.org/beps/bep_0034.html
 
-public abstract class Session {
+public abstract class Session { // TODO Runnable
 
 	protected ClientInfo client_info;
 	protected String info_hash;
 
-	protected String tracker_id;
-
-	protected Session(String url, ClientInfo client_info, String info_hash) {
+	protected Session(ClientInfo client_info, String info_hash) {
 		this.client_info = client_info;
 		this.info_hash = info_hash;
 	}

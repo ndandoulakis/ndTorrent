@@ -25,7 +25,7 @@ public final class UdpSession extends Session {
 
 	static final int MAX_REQUEST_LENGTH = 100;
 	static final int MAX_RESPONSE_LENGTH = 1500;
-	static final int MAX_TIMEOUT = 15 * 60;
+	static final int MAX_TIMEOUT = 2 * 60;
 	static final int DEFAULT_PORT = 80;
 
 	Random random = new Random();

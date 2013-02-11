@@ -14,15 +14,9 @@ public final class Client implements ClientInfo {
 	private BTServerSocket server;
 	private List<Peer> peers = new ArrayList<Peer>();
 
-	public static void main(String[] args) {
-		Client client = new Client();
-		client.setServerPort(Client.DEFAULT_PORT);
-		client.addTorrent("test_big.torrent");
-	}
-
 	public void setServerPort(int port) {
 		if (server != null)
-			server.stop_requested = true;
+			server.close();
 
 		server = new BTServerSocket(port);
 		server.start();
@@ -31,11 +25,11 @@ public final class Client implements ClientInfo {
 		}
 	}
 
-	public void addTorrent(String filename) {
-		// TODO adding same MetaInfo again should fail
+	public String addTorrent(String filename) {
+		// TODO avoid adding same MetaInfo twice
 		MetaInfo meta = new MetaInfo(filename);
 		if (meta.getInfoHash() == null)
-			return;
+			return null;
 
 		Peer peer = new Peer(this, meta);
 		peers.add(peer);
@@ -43,6 +37,20 @@ public final class Client implements ClientInfo {
 			server.addHandler(peer);
 		}
 		peer.start();
+		return meta.getInfoHash();
+	}
+
+	public void close() {
+		server.close();
+		for (Peer peer : peers) {
+			peer.close();
+			try {
+				peer.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		peers.clear();
 	}
 
 	@Override

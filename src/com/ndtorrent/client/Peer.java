@@ -25,10 +25,7 @@ public final class Peer extends Thread {
 	private Selector channel_selector;
 	private Selector socket_selector;
 
-	// ? keep every address (except repeated IPs) that we can't accept
-	// due to max connections limit, for future outgoing connections.
-
-	// TODO outgoing candidates (round-robin)
+	// TODO localDTOs to expose status; simpler than synchronizing the threads
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -82,7 +79,7 @@ public final class Peer extends Thread {
 				// removeFellowSeeders();
 				// restoreRejectedPieces();
 				restoreBrokenRequests();
-				// new outgoing connections
+				spawnOutgoingConnections();
 				processIncomingMessages();
 				advertisePieces();
 				updateAmInterestedState();
@@ -255,6 +252,17 @@ public final class Peer extends Thread {
 			}
 			piece.restoreRequested(requested);
 		}
+	}
+
+	private void spawnOutgoingConnections() {
+		// TODO keep every address (except repeated IPs) that we can't accept
+		// due to max connections limit, for future outgoing connections.
+
+		// Check channel_selector size + socket_selector size.
+		// Consume the list of peer addresses in a round-robin manner.
+		// Give priority to peers not yet collaborated
+		// Doesn't matter if the list gets empty. It'll filled up again
+		// through the peer tracking phase, and with the incoming connections.
 	}
 
 	private void processIncomingMessages() {

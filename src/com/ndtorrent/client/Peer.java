@@ -255,7 +255,7 @@ public final class Peer extends Thread {
 	}
 
 	private void spawnOutgoingConnections() {
-		// TODO keep every address (except repeated IPs) that we can't accept
+		// TODO keep every address (unique IPs) that we can't accept
 		// due to max connections limit, for future outgoing connections.
 
 		// Check channel_selector size + socket_selector size.

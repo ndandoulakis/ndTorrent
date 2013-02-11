@@ -17,7 +17,7 @@ import com.ndtorrent.client.tracker.Session;
 public final class Peer extends Thread {
 	static final int MAX_PEERS = 40;
 
-	public volatile boolean stop_requested;
+	private volatile boolean stop_requested;
 
 	private ClientInfo client_info;
 	private MetaInfo meta;
@@ -28,7 +28,7 @@ public final class Peer extends Thread {
 	// ? keep every address (except repeated IPs) that we can't accept
 	// due to max connections limit, for future outgoing connections.
 
-	// TODO outgoing candidates (circular list?)
+	// TODO outgoing candidates (round-robin)
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -36,6 +36,10 @@ public final class Peer extends Thread {
 		this.client_info = client_info;
 		this.meta = meta_info;
 		torrent = new Torrent(meta_info, client_info.getStorageLocation());
+	}
+
+	public void close() {
+		stop_requested = true;
 	}
 
 	@Override

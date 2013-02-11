@@ -11,7 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class BTServerSocket extends Thread {
 
-	public volatile boolean stop_requested;
+	private volatile boolean stop_requested;
 
 	private List<Peer> handlers;
 	private Selector selector;
@@ -32,6 +32,11 @@ public final class BTServerSocket extends Thread {
 
 	public void removeHandler(Peer peer) {
 		handlers.remove(peer);
+	}
+	
+	public void close() {
+		handlers.clear();
+		stop_requested = true;
 	}
 
 	@Override

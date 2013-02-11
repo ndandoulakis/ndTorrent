@@ -44,6 +44,8 @@ public final class Client implements ClientInfo {
 		server.close();
 		for (Peer peer : peers) {
 			peer.close();
+		}
+		for (Peer peer : peers) {
 			try {
 				peer.join();
 			} catch (InterruptedException e) {

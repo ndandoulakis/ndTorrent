@@ -5,8 +5,6 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 
 import com.ndtorrent.client.Client;
-import com.ndtorrent.client.status.ConnectionInfo;
-import com.ndtorrent.client.status.StatusObserver;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -14,14 +12,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.JInternalFrame;
-import javax.swing.SwingUtilities;
 
 import java.awt.GridLayout;
-import java.util.List;
 
 import javax.swing.BoxLayout;
 
-public class Frontend implements StatusObserver {
+public class Frontend {
 
 	private JFrame frmNdtorrentAlpha;
 
@@ -85,25 +81,17 @@ public class Frontend implements StatusObserver {
 				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
 		connectionsTable = new JTable();
-		connectionsTable.setModel(new ConnectionsModel(null));
 		connectionsTable.setFillsViewportHeight(true);
 		scrollPane.setViewportView(connectionsTable);
 		internalFrame.setVisible(true);
 
+		ConnectionsModel connections = new ConnectionsModel();
+		connectionsTable.setModel(connections);
+
 		client.setServerPort(Client.DEFAULT_PORT);
 		String info_hash = client.addTorrent("test_big.torrent");
-		client.addStatusObserver(this, info_hash);
+		client.addStatusObserver(connections, info_hash);
 
-	}
-
-	@Override
-	public void asyncUpdate(final List<ConnectionInfo> status) {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				connectionsTable.setModel(new ConnectionsModel(status));
-			}
-		});
 	}
 
 }

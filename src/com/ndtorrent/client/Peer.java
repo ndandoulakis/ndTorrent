@@ -4,18 +4,24 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.ndtorrent.client.status.ConnectionInfo;
+import com.ndtorrent.client.status.StatusObserver;
 import com.ndtorrent.client.tracker.Event;
 import com.ndtorrent.client.tracker.Session;
 
 public final class Peer extends Thread {
 	static final int MAX_PEERS = 40;
+	static final long NOTIFY_STATUS_INTERVAL = (long) 1e9;
 
 	private volatile boolean stop_requested;
 
@@ -25,7 +31,9 @@ public final class Peer extends Thread {
 	private Selector channel_selector;
 	private Selector socket_selector;
 
-	// TODO localDTOs to expose status; simpler than synchronizing the threads
+	// Expose status through Local DTO messages.
+	private long last_status_at;
+	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -88,6 +96,8 @@ public final class Peer extends Thread {
 				requestMoreBlocks();
 				// update input/output totals
 				keepConnectionsAlive();
+
+				notifyStatusObservers();
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -426,4 +436,35 @@ public final class Peer extends Thread {
 
 	}
 
+	public void addStatusObserver(StatusObserver observer) {
+		if (observer == null)
+			throw new NullPointerException();
+
+		observers.add(observer);
+	}
+
+	public void removeStatusObserver(StatusObserver observer) {
+		observers.remove(observer);
+	}
+
+	private void notifyStatusObservers() {
+		if (observers.isEmpty())
+			return;
+
+		long now = System.nanoTime();
+		if (now - last_status_at < NOTIFY_STATUS_INTERVAL)
+			return;
+
+		last_status_at = now;
+
+		List<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
+		for (SelectionKey key : channel_selector.keys()) {
+			PeerChannel channel = (PeerChannel) key.attachment();
+			connections.add(new ConnectionInfo(channel));
+		}
+
+		for (StatusObserver o : observers) {
+			o.asyncUpdate(connections);
+		}
+	}
 }

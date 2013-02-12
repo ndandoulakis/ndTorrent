@@ -1,7 +1,9 @@
 package com.ndtorrent.client;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.ndtorrent.client.status.StatusObserver;
 
 public final class Client implements ClientInfo {
 
@@ -12,7 +14,7 @@ public final class Client implements ClientInfo {
 	private String id = "BTCLIENTID1234567890";
 
 	private BTServerSocket server;
-	private List<Peer> peers = new ArrayList<Peer>();
+	private Map<String, Peer> peers = new HashMap<String, Peer>();
 
 	public void setServerPort(int port) {
 		if (server != null)
@@ -20,32 +22,35 @@ public final class Client implements ClientInfo {
 
 		server = new BTServerSocket(port);
 		server.start();
-		for (Peer p : peers) {
+		for (Peer p : peers.values()) {
 			server.addHandler(p);
 		}
 	}
 
 	public String addTorrent(String filename) {
-		// TODO avoid adding same MetaInfo twice
 		MetaInfo meta = new MetaInfo(filename);
-		if (meta.getInfoHash() == null)
+		String info_hash = meta.getInfoHash();
+		if (info_hash == null)
 			return null;
+		
+		if (peers.containsKey(info_hash))
+			return info_hash;
 
 		Peer peer = new Peer(this, meta);
-		peers.add(peer);
+		peers.put(info_hash, peer);
 		if (server != null) {
 			server.addHandler(peer);
 		}
 		peer.start();
-		return meta.getInfoHash();
+		return info_hash;
 	}
 
 	public void close() {
 		server.close();
-		for (Peer peer : peers) {
+		for (Peer peer : peers.values()) {
 			peer.close();
 		}
-		for (Peer peer : peers) {
+		for (Peer peer : peers.values()) {
 			try {
 				peer.join();
 			} catch (InterruptedException e) {
@@ -68,6 +73,13 @@ public final class Client implements ClientInfo {
 	@Override
 	public String getStorageLocation() {
 		return storage_location;
+	}
+
+	public void addStatusObserver(StatusObserver observer, String info_hash) {
+		Peer peer = peers.get(info_hash);
+		if (peer != null) {
+			peer.addStatusObserver(observer);
+		}
 	}
 
 }

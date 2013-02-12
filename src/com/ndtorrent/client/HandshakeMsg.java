@@ -45,4 +45,17 @@ public final class HandshakeMsg {
 		}
 	}
 
+	public String getID() {
+		byte[] peer_id = new byte[20];
+		ByteBuffer dup = data.duplicate();
+		dup.position(1 + PROTOCOL.length() + 8 + 20);
+		dup.get(peer_id, 0, 20);
+		try {
+			return new String(peer_id, "ISO-8859-1");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 }

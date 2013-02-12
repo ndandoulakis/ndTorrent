@@ -5,17 +5,23 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 
 import com.ndtorrent.client.Client;
+import com.ndtorrent.client.status.ConnectionInfo;
+import com.ndtorrent.client.status.StatusObserver;
+
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.JScrollPane;
-import java.awt.BorderLayout;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.JInternalFrame;
+import javax.swing.SwingUtilities;
+
 import java.awt.GridLayout;
+import java.util.List;
+
 import javax.swing.BoxLayout;
 
-public class Frontend {
+public class Frontend implements StatusObserver {
 
 	private JFrame frmNdtorrentAlpha;
 
@@ -61,25 +67,43 @@ public class Frontend {
 		});
 		frmNdtorrentAlpha.setBounds(100, 100, 450, 300);
 		frmNdtorrentAlpha.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmNdtorrentAlpha.getContentPane().setLayout(new GridLayout(0, 1, 0, 0));
-		
+		frmNdtorrentAlpha.getContentPane()
+				.setLayout(new GridLayout(0, 1, 0, 0));
+
 		internalFrame = new JInternalFrame("Connections");
 		internalFrame.setBorder(null);
 		internalFrame.setFrameIcon(null);
 		frmNdtorrentAlpha.getContentPane().add(internalFrame);
-		internalFrame.getContentPane().setLayout(new BoxLayout(internalFrame.getContentPane(), BoxLayout.X_AXIS));
-		
+		internalFrame.getContentPane()
+				.setLayout(
+						new BoxLayout(internalFrame.getContentPane(),
+								BoxLayout.X_AXIS));
+
 		JScrollPane scrollPane = new JScrollPane();
 		internalFrame.getContentPane().add(scrollPane);
-		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		
+		scrollPane
+				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
 		connectionsTable = new JTable();
 		connectionsTable.setModel(new ConnectionsModel(null));
 		connectionsTable.setFillsViewportHeight(true);
 		scrollPane.setViewportView(connectionsTable);
 		internalFrame.setVisible(true);
-		
+
 		client.setServerPort(Client.DEFAULT_PORT);
-		client.addTorrent("test_big.torrent");
+		String info_hash = client.addTorrent("test_big.torrent");
+		client.addStatusObserver(this, info_hash);
+
 	}
+
+	@Override
+	public void asyncUpdate(final List<ConnectionInfo> status) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				connectionsTable.setModel(new ConnectionsModel(status));
+			}
+		});
+	}
+
 }

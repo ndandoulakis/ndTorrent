@@ -26,7 +26,7 @@ public final class ConnectionsModel extends AbstractTableModel {
 
 	@Override
 	public int getColumnCount() {
-		return column_names.length;
+		return 1;// column_names.length;
 	}
 
 	@Override
@@ -36,8 +36,13 @@ public final class ConnectionsModel extends AbstractTableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		// TODO Auto-generated method stub
-		return null;
+		ConnectionInfo info = connections.get(rowIndex);
+		switch (columnIndex) {
+		case 0:
+			return info.getIP();
+		default:
+			return null;
+		}
 	}
 
 }

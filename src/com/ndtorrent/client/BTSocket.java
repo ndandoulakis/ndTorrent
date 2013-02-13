@@ -145,7 +145,7 @@ public final class BTSocket {
 		} catch (IOException e) {
 			e.printStackTrace();
 			is_input_error = true;
-			// Does an exception happen if the system is temporarily offline?
+			// Can a network outage raise an exception?
 		}
 	}
 

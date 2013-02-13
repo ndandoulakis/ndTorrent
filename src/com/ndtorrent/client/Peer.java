@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.ndtorrent.client.status.ConnectionInfo;
+import com.ndtorrent.client.status.PieceInfo;
 import com.ndtorrent.client.status.StatusObserver;
 import com.ndtorrent.client.tracker.Event;
 import com.ndtorrent.client.tracker.Session;
@@ -250,9 +251,9 @@ public final class Peer extends Thread {
 		// If a block is flagged as requested but no channel has a corresponding
 		// unfulfilled request, it's considered broken and must be restored.
 		// TODO pieces not updated for a minute; remove remaining requests.
-		Set<Entry<Integer, Piece>> partialEntries = torrent.getPartialPieces();
+		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
 		BitSet requested = new BitSet();
-		for (Entry<Integer, Piece> entry : partialEntries) {
+		for (Entry<Integer, Piece> entry : partial_entries) {
 			requested.set(0, requested.length(), false);
 			int index = entry.getKey();
 			Piece piece = entry.getValue();
@@ -463,8 +464,15 @@ public final class Peer extends Thread {
 			connections.add(new ConnectionInfo(channel));
 		}
 
+		List<PieceInfo> pieces = new ArrayList<PieceInfo>();
+		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
+		for (Entry<Integer, Piece> entry : partial_entries) {
+			pieces.add(new PieceInfo(entry.getKey(), entry.getValue()));
+		}
+
 		for (StatusObserver o : observers) {
-			o.asyncUpdate(connections);
+			o.asyncConnections(connections);
+			o.asyncPieces(pieces);
 		}
 	}
 }

@@ -5,6 +5,9 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 
 import com.ndtorrent.client.Client;
+import com.ndtorrent.client.status.ConnectionInfo;
+import com.ndtorrent.client.status.PieceInfo;
+import com.ndtorrent.client.status.StatusObserver;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -12,12 +15,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.JInternalFrame;
+import javax.swing.SwingUtilities;
 
 import java.awt.GridLayout;
+import java.util.List;
 
 import javax.swing.BoxLayout;
 
-public class Frontend {
+public class Frontend implements StatusObserver {
 
 	private JFrame frmNdtorrentAlpha;
 
@@ -85,13 +90,30 @@ public class Frontend {
 		scrollPane.setViewportView(connectionsTable);
 		internalFrame.setVisible(true);
 
-		ConnectionsModel connections = new ConnectionsModel();
-		connectionsTable.setModel(connections);
+		connectionsTable.setModel(new ConnectionsModel());
 
 		client.setServerPort(Client.DEFAULT_PORT);
 		String info_hash = client.addTorrent("test_big.torrent");
-		client.addStatusObserver(connections, info_hash);
+		client.addStatusObserver(this, info_hash);
 
+	}
+
+	@Override
+	public void asyncConnections(final List<ConnectionInfo> connnections) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				((ConnectionsModel) connectionsTable.getModel())
+						.setConnections(connnections);
+			}
+		});
+
+	}
+
+	@Override
+	public void asyncPieces(final List<PieceInfo> pieces) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

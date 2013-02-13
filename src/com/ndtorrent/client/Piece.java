@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 public final class Piece {
-	private int total_blocks;
+	private int num_blocks;
 	private int block_length;
 	private int tail_length;
 
@@ -21,10 +21,10 @@ public final class Piece {
 		data = ByteBuffer.allocate(piece_length);
 		this.block_length = block_length;
 
-		total_blocks = (piece_length + block_length - 1) / block_length;
-		written = new BitSet(total_blocks);
-		notrequested = new BitSet(total_blocks);
-		notrequested.set(0, total_blocks, true);
+		num_blocks = (piece_length + block_length - 1) / block_length;
+		written = new BitSet(num_blocks);
+		notrequested = new BitSet(num_blocks);
+		notrequested.set(0, num_blocks, true);
 
 		tail_length = piece_length % block_length;
 		if (piece_length != 0 && tail_length == 0)
@@ -37,11 +37,11 @@ public final class Piece {
 	}
 
 	public boolean isComplete() {
-		return numWrittenBlocks() == total_blocks;
+		return numWrittenBlocks() == num_blocks;
 	}
 
 	public void restoreRequested(BitSet requested) {
-		notrequested.set(0, total_blocks, true);
+		notrequested.set(0, num_blocks, true);
 		notrequested.andNot(requested);
 		notrequested.andNot(written);
 	}
@@ -67,7 +67,7 @@ public final class Piece {
 	}
 
 	public int getBlockLength(int index) {
-		return index + 1 == total_blocks ? tail_length : block_length;
+		return index + 1 == num_blocks ? tail_length : block_length;
 	}
 
 	private boolean validBlockRegion(int offset, int length) {
@@ -94,6 +94,10 @@ public final class Piece {
 		data.put(block.getData().array(), 1 + 2 * 4, length);
 		written.set(getBlockIndex(offset), true);
 		modified_at = System.nanoTime();
+	}
+	
+	public int numBlocks() {
+		return num_blocks;
 	}
 
 	public int numWrittenBlocks() {

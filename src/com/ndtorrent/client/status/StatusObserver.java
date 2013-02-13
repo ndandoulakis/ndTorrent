@@ -4,9 +4,11 @@ import java.util.List;
 
 public interface StatusObserver {
 
-	void asyncUpdate(final List<ConnectionInfo> status);
-
-	// A Swing component could implement asyncUpdate() like this
+	// A Swing component could implement asyncMethods like this
 	// { SwingUtilities.invokeLater(new Runnable() {set/draw status}); }
+
+	void asyncConnections(final List<ConnectionInfo> connections);
+	
+	void asyncPieces(final List<PieceInfo> pieces);
 
 }

@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.util.BitSet;
 
 import javax.swing.JComponent;
 import javax.swing.JTable;
@@ -12,17 +13,33 @@ import javax.swing.table.TableCellRenderer;
 public class BarRenderer extends JComponent implements TableCellRenderer {
 
 	private static final long serialVersionUID = 1L;
-	
+
+	private BitSet bits;
+	private int nbits;
+
 	public BarRenderer() {
 		setPreferredSize(new Dimension(0, 50));
 	}
 
+	public void setBits(BitSet bits, int nbits) {
+		this.bits = bits;
+		this.nbits = nbits;
+		repaint();
+	}
+
 	@Override
 	public void paintComponent(Graphics g) {
+		if (bits == null)
+			return;
 		Dimension size = getSize();
-		g.setColor(Color.RED);
-		// g.fillRect(0, 0, 100, 20);
-		g.drawRect(0, 0, size.width - 1, size.height - 1);
+		int width = size.width;
+		int height = size.height;
+		for (int i = 0; i < nbits; i++) {
+			int x = (i * width) / nbits;
+			int x_next = ((i + 1) * width) / nbits;
+			g.setColor(bits.get(i) ? Color.BLUE : Color.RED);
+			g.fillRect(x, 0, x_next - x, height);
+		}
 	}
 
 	@Override

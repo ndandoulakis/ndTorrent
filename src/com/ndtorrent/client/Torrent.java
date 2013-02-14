@@ -60,7 +60,7 @@ public final class Torrent {
 	public void close() {
 		// shutdown services, files, etc
 	}
-	
+
 	public long getRemainingLength() {
 		// TODO sum unregistered subtract partial
 		return total_length;

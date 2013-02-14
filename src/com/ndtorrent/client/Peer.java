@@ -152,6 +152,8 @@ public final class Peer extends Thread {
 	}
 
 	private void configureChannelKeys() {
+		// ? To avoid filling up the memory with too many pieces,
+		// disable OP_READ if Torrent writer is busy.
 		for (SelectionKey key : channel_selector.keys()) {
 			if (!key.isValid())
 				continue;

@@ -14,6 +14,8 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 
 	private static final long serialVersionUID = 1L;
 
+	// background color, ON color, OFF color
+	// BitSet mask; // bits to draw
 	private BitSet bits;
 	private int nbits;
 
@@ -34,6 +36,7 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 		Dimension size = getSize();
 		int width = size.width;
 		int height = size.height;
+		// TODO draw range of bits instead
 		for (int i = 0; i < nbits; i++) {
 			int x = (i * width) / nbits;
 			int x_next = ((i + 1) * width) / nbits;

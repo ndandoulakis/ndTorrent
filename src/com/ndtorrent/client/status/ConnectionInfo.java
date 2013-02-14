@@ -4,6 +4,7 @@ import com.ndtorrent.client.PeerChannel;
 
 public final class ConnectionInfo {
 
+	// TODO add the sizes of various message lists
 	private final String address;
 	private final String id;
 	private final double input_rate;

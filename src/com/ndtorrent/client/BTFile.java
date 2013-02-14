@@ -100,6 +100,9 @@ public final class BTFile implements Comparable<Long> {
 		// as possible at the given file position without growing the file.
 		if (file_position >= length)
 			return -1; // same as read()
+		// We need to set and reset the limit() before and after the write().
+		// The duplicate() helps, in the case of an exception, to not leave
+		// the source buffer in an intermediate state.
 		ByteBuffer bb = src.duplicate();
 		int remaining = (int) Math.min(bb.remaining(), length - file_position);
 		bb.limit(bb.position() + remaining);

@@ -11,4 +11,5 @@ public interface StatusObserver {
 	
 	void asyncPieces(final List<PieceInfo> pieces);
 
+	void asyncTorrentStatus(final TorrentInfo torrent);
 }

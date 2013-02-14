@@ -17,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.ndtorrent.client.status.ConnectionInfo;
 import com.ndtorrent.client.status.PieceInfo;
 import com.ndtorrent.client.status.StatusObserver;
+import com.ndtorrent.client.status.TorrentInfo;
 import com.ndtorrent.client.tracker.Event;
 import com.ndtorrent.client.tracker.Session;
 
@@ -475,6 +476,7 @@ public final class Peer extends Thread {
 		for (StatusObserver o : observers) {
 			o.asyncConnections(connections);
 			o.asyncPieces(pieces);
+			o.asyncTorrentStatus(new TorrentInfo(torrent));
 		}
 	}
 }

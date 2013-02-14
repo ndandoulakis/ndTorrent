@@ -8,6 +8,7 @@ import com.ndtorrent.client.Client;
 import com.ndtorrent.client.status.ConnectionInfo;
 import com.ndtorrent.client.status.PieceInfo;
 import com.ndtorrent.client.status.StatusObserver;
+import com.ndtorrent.client.status.TorrentInfo;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -17,12 +18,10 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.JInternalFrame;
 import javax.swing.SwingUtilities;
 
-import java.awt.GridLayout;
 import java.util.List;
 
 import javax.swing.BoxLayout;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 
 public class Frontend implements StatusObserver {
 
@@ -34,7 +33,7 @@ public class Frontend implements StatusObserver {
 	private JInternalFrame piecesFrame;
 	private JScrollPane scrollPane_1;
 	private JTable piecesTable;
-	private BarRenderer bar;
+	private BarRenderer torrentBar;
 
 	/**
 	 * Launch the application.
@@ -74,10 +73,12 @@ public class Frontend implements StatusObserver {
 		});
 		frmNdtorrentAlpha.setBounds(100, 100, 402, 318);
 		frmNdtorrentAlpha.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmNdtorrentAlpha.getContentPane().setLayout(new BoxLayout(frmNdtorrentAlpha.getContentPane(), BoxLayout.Y_AXIS));
-		
-		bar = new BarRenderer();
-		frmNdtorrentAlpha.getContentPane().add(bar);
+		frmNdtorrentAlpha.getContentPane().setLayout(
+				new BoxLayout(frmNdtorrentAlpha.getContentPane(),
+						BoxLayout.Y_AXIS));
+
+		torrentBar = new BarRenderer();
+		frmNdtorrentAlpha.getContentPane().add(torrentBar);
 
 		piecesFrame = new JInternalFrame("Pieces");
 		piecesFrame.setBorder(null);
@@ -141,6 +142,16 @@ public class Frontend implements StatusObserver {
 			@Override
 			public void run() {
 				((PiecesModel) piecesTable.getModel()).setPieces(pieces);
+			}
+		});
+	}
+
+	@Override
+	public void asyncTorrentStatus(final TorrentInfo torrent) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				torrentBar.setBits(torrent.getBitfield(), torrent.numOfPieces());
 			}
 		});
 	}

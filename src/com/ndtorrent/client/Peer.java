@@ -232,9 +232,10 @@ public final class Peer extends Thread {
 			// incoming counter
 			// outgoing counter
 			PeerChannel peer = (PeerChannel) key.attachment();
-			if (ip.equals(peer.socket.getRemoteIP()))
+			if (ip.equals(peer.socket.getRemoteIP())) {
 				socket.close();
-			return;
+				return;
+			}
 		}
 
 		PeerChannel channel = new PeerChannel();

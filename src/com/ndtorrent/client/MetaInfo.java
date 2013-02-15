@@ -3,6 +3,7 @@ package com.ndtorrent.client;
 import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -14,11 +15,9 @@ public final class MetaInfo {
 	// string to a proper String, if you access meta info structures
 	// directly.
 
-	Map<String, Object> meta;
-	List<Object> announce_list;
-
-	Map<String, Object> info;
-	byte info_hash[];
+	private Map<String, Object> meta;
+	private Map<String, Object> info;
+	private byte info_hash[];
 
 	@SuppressWarnings("unchecked")
 	public MetaInfo(String filename) {
@@ -30,8 +29,6 @@ public final class MetaInfo {
 			if (text.startsWith("d")) {
 				meta = (Map<String, Object>) Bdecoder.decode(text);
 			}
-
-			announce_list = (List<Object>) meta.get("announce-list");
 
 			info = (Map<String, Object>) meta.get("info");
 			MessageDigest m;
@@ -47,6 +44,17 @@ public final class MetaInfo {
 
 	public String getAnnounce() {
 		return Bdecoder.utf8EncodedString(meta.get("announce"));
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<String> getAnnounceList() {
+		List<String> list = new ArrayList<String>();
+		Object meta_list = meta.get("announce-list");
+		if (meta_list != null)
+			for (Object o : (List<Object>) meta_list) {
+				list.add(Bdecoder.utf8EncodedString(o));
+			}
+		return list;
 	}
 
 	public String getComment() {

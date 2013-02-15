@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -33,6 +32,8 @@ public final class Peer extends Thread {
 	private Selector channel_selector;
 	private Selector socket_selector;
 
+	private List<Session> sessions = new ArrayList<Session>();
+
 	// Expose status through Local DTO messages.
 	private long last_status_at;
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
@@ -43,6 +44,13 @@ public final class Peer extends Thread {
 		this.client_info = client_info;
 		this.meta = meta_info;
 		torrent = new Torrent(meta_info, client_info.getStorageLocation());
+
+		List<String> trackers = meta.getAnnounceList();
+		if (trackers.isEmpty())
+			trackers.add(meta.getAnnounce());
+		for (String url : trackers) {
+			sessions.add(Session.create(url, client_info, meta.getInfoHash()));
+		}
 	}
 
 	public void close() {
@@ -53,8 +61,6 @@ public final class Peer extends Thread {
 	public void run() {
 		System.out.println(meta.getPieceLength());
 		System.out.println(torrent.getTotalLength());
-
-		// announceTorrent();
 
 		try {
 			channel_selector = Selector.open();
@@ -67,7 +73,8 @@ public final class Peer extends Thread {
 
 		while (!stop_requested) {
 			try {
-				removeExpiredHandshakes();
+				//updateTrackerSessions();
+				// update peer Set
 
 				// a Selector doesn't clear the selected keys so it's our
 				// responsibility to do it.
@@ -75,6 +82,7 @@ public final class Peer extends Thread {
 				socket_selector.selectNow();
 				// processConnectMessages();
 				processHandshakeMessages();
+				removeExpiredHandshakes();
 
 				configureChannelKeys();
 				channel_selector.selectedKeys().clear();
@@ -116,13 +124,32 @@ public final class Peer extends Thread {
 
 	}
 
-	private void removeExpiredHandshakes() {
-		for (SelectionKey key : socket_selector.keys()) {
-			BTSocket socket = (BTSocket) key.attachment();
-			if (socket.isHandshakeExpired()) {
-				key.cancel();
-				socket.close();
+	private void updateTrackerSessions() {
+		for (Session session : sessions) {
+			if (!session.isUpdateDone())
+				continue;
+			// if invalid response, probably is connection error
+			// if session.intervalEnded
+			// session.update(Event.STARTED, 0, 0, remaining);
+			// on first request use Event.STARTED
+			// for regular update use Event.NONE
+		}
+
+		String url = "udp://tracker.openbittorrent.com:80/announce";
+
+		Session session = Session.create(url, client_info, meta.getInfoHash());
+		session.update(Event.STARTED, 0, 0, torrent.getRemainingLength());
+
+		if (session.isValidResponse()) {
+			if (session.isTrackerError())
+				System.out.println("tracker error!");
+			else {
+				System.out.println(session.getLeechers());
+				System.out.println(session.getSeeders());
+				System.out.println(session.getPeers());
 			}
+		} else {
+			System.out.println("invalid tracker response");
 		}
 	}
 
@@ -148,6 +175,16 @@ public final class Peer extends Thread {
 					addReadyConnection(socket);
 				else
 					socket.close();
+			}
+		}
+	}
+
+	private void removeExpiredHandshakes() {
+		for (SelectionKey key : socket_selector.keys()) {
+			BTSocket socket = (BTSocket) key.attachment();
+			if (socket.isHandshakeExpired()) {
+				key.cancel();
+				socket.close();
 			}
 		}
 	}
@@ -416,28 +453,6 @@ public final class Peer extends Thread {
 				peer.addKeepAlive();
 			}
 		}
-	}
-
-	private void announceTorrent() {
-		System.out.println(meta.announce_list);
-
-		String url = "udp://tracker.openbittorrent.com:80/announce";
-
-		Session session = Session.create(url, client_info, meta.getInfoHash());
-		session.update(Event.STARTED, 0, 0, torrent.getRemainingLength());
-
-		if (session.isValidResponse()) {
-			if (session.isTrackerError())
-				System.out.println("tracker error!");
-			else {
-				System.out.println(session.getLeechers());
-				System.out.println(session.getSeeders());
-				System.out.println(session.getPeers());
-			}
-		} else {
-			System.out.println("invalid tracker response");
-		}
-
 	}
 
 	public void addStatusObserver(StatusObserver observer) {

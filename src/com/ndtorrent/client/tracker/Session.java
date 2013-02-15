@@ -14,7 +14,7 @@ import com.ndtorrent.client.ClientInfo;
 // See "DNS Tracker Preferences"
 // http://bittorrent.org/beps/bep_0034.html
 
-public abstract class Session { // TODO Runnable
+public abstract class Session {
 
 	protected ClientInfo client_info;
 	protected String info_hash;
@@ -37,6 +37,8 @@ public abstract class Session { // TODO Runnable
 
 	public abstract void update(Event event, long uploaded, long downloaded,
 			long left);
+
+	public abstract boolean isUpdateDone();
 
 	public abstract boolean isValidResponse();
 

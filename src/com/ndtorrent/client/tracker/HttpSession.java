@@ -17,61 +17,82 @@ import java.util.TreeMap;
 import com.ndtorrent.client.Bdecoder;
 import com.ndtorrent.client.ClientInfo;
 
-public final class HttpSession extends Session {
+public final class HttpSession extends Session implements Runnable {
 
 	// Implements the HTTP tracker protocol
 
+	private Thread thread;
+
 	private String tracker;
 	private String tracker_id;
-	private SortedMap<String, Object> response = new TreeMap<String, Object>();
+
+	private String request;
+	private volatile SortedMap<String, Object> response = new TreeMap<String, Object>();
 
 	protected HttpSession(String url, ClientInfo client_info, String info_hash) {
 		super(client_info, info_hash);
 		tracker = url;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
-		// TODO check if previous response is still running; new Thread
-
-		URLConnection conn = null;
+		if (!isUpdateDone())
+			return;
 
 		try {
-			String escapedId = URLEncoder.encode(client_info.getID(),
+			// Prepare Request
+			String escaped_id = URLEncoder.encode(client_info.getID(),
 					"ISO-8859-1");
-
-			String escapedHash = URLEncoder.encode(info_hash, "ISO-8859-1");
-
-			String query = String
+			String escaped_hash = URLEncoder.encode(info_hash, "ISO-8859-1");
+			request = String
 					.format("?peer_id=%s&port=%d&info_hash=%s&event=%s&uploaded=%d&downloaded=%d&left=%d&no_peer_id=1&compact=1",
-							escapedId, client_info.getPort(), escapedHash,
+							escaped_id, client_info.getPort(), escaped_hash,
 							event, uploaded, downloaded, left);
-
 			if (tracker_id != null) {
-				query = query + "&trackerid="
+				request += "&trackerid="
 						+ URLEncoder.encode(tracker_id, "ISO-8859-1");
 			}
 
-			conn = new URL(tracker + query).openConnection();
-			conn.setUseCaches(false);
+			// Run
+			thread = new Thread(this);
 
-			String response = new Scanner(conn.getInputStream()).useDelimiter(
-					"^").next();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+	}
 
-			this.response = (SortedMap<String, Object>) Bdecoder
-					.decode(response);
+	@Override
+	public boolean isUpdateDone() {
+		return thread == null || !thread.isAlive();
+	}
 
-			if (this.response.containsKey("tracker id"))
-				tracker_id = (String) this.response.get("tracker id");
+	@SuppressWarnings("unchecked")
+	@Override
+	public void run() {
+		System.out.println("http session running");
+
+		URLConnection connection = null;
+		try {
+			connection = new URL(tracker + request).openConnection();
+			connection.setUseCaches(false);
+
+			String ben_response;
+			ben_response = new Scanner(connection.getInputStream())
+					.useDelimiter("^").next();
+			response = (SortedMap<String, Object>) Bdecoder
+					.decode(ben_response);
+			if (response.containsKey("tracker id"))
+				tracker_id = (String) response.get("tracker id");
 
 		} catch (IOException e) {
-			this.response = new TreeMap<String, Object>();
+			response = new TreeMap<String, Object>();
+			// TODO save the connection error
 			e.printStackTrace();
 		} finally {
 			// On HTTP exception, i.e. error 400, the connection remains open.
-			((HttpURLConnection) conn).disconnect();
+			((HttpURLConnection) connection).disconnect();
 		}
+
 	}
 
 	@Override

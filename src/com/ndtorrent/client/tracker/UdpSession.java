@@ -1,6 +1,7 @@
 package com.ndtorrent.client.tracker;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -14,7 +15,7 @@ import java.util.Random;
 
 import com.ndtorrent.client.ClientInfo;
 
-public final class UdpSession extends Session {
+public final class UdpSession extends Session implements Runnable {
 
 	// Implements the UDP tracker protocol
 
@@ -31,13 +32,14 @@ public final class UdpSession extends Session {
 	static final int MAX_TIMEOUT = 2 * 60;
 	static final int DEFAULT_PORT = 80;
 
+	private Thread thread;
+
 	private Random random = new Random();
 
 	private DatagramSocket socket;
 	private ByteBuffer request_body;
 	private ByteBuffer request = ByteBuffer.allocate(MAX_REQUEST_LENGTH);
-	private ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
-	private int received_length;
+	private volatile ByteBuffer response = ByteBuffer.allocate(0);
 
 	private int timeStep = 1;
 	private int transaction_id = -1;
@@ -57,9 +59,12 @@ public final class UdpSession extends Session {
 
 	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
+		if (!isUpdateDone())
+			return;
+
 		request_body = ByteBuffer.allocate(REQUEST_BODY_LENGTH);
-		timeStep = 1;
 		try {
+			// Prepare Request
 			request_body.put(info_hash.getBytes("ISO-8859-1"));
 			request_body.put(client_info.getID().getBytes("ISO-8859-1"));
 			request_body.putLong(downloaded);
@@ -71,10 +76,28 @@ public final class UdpSession extends Session {
 			request_body.putInt(-1); // num_want
 			request_body.putShort((short) client_info.getPort());
 
+			// Run
+			thread = new Thread(this);
+
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public boolean isUpdateDone() {
+		return thread == null || !thread.isAlive();
+	}
+
+	@Override
+	public void run() {
+		timeStep = 1;
+		try {
 			socket = new DatagramSocket();
 			performAction(ACTION_ANNOUNCE);
 
 		} catch (IOException e) {
+			// TODO save the connection error
 			e.printStackTrace();
 		} finally {
 			if (socket != null) {
@@ -115,7 +138,8 @@ public final class UdpSession extends Session {
 	public Collection<InetSocketAddress> getPeers() {
 		ArrayList<InetSocketAddress> result = new ArrayList<InetSocketAddress>();
 
-		for (int ofs = 20; ofs < received_length; ofs += 6) {
+		final ByteBuffer response = this.response;
+		for (int ofs = 20; ofs < response.limit(); ofs += 6) {
 			if (ofs + 6 > MAX_RESPONSE_LENGTH)
 				break;
 
@@ -128,6 +152,7 @@ public final class UdpSession extends Session {
 	// Protocol //
 
 	private void performAction(int action) throws IOException {
+		ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
 		do {
 			if (connectionExpired() && action != ACTION_CONNECT)
 				performAction(ACTION_CONNECT);
@@ -165,7 +190,7 @@ public final class UdpSession extends Session {
 						resBlock.length);
 				socket.setSoTimeout(timeout * 1000);
 				socket.receive(in);
-				received_length = in.getLength();
+				response.limit(in.getLength());
 			} catch (SocketTimeoutException e) {
 			}
 
@@ -176,6 +201,10 @@ public final class UdpSession extends Session {
 		if (action == ACTION_CONNECT) {
 			expire_time = (long) (System.nanoTime() + 6e10);
 			connection_id = response.getLong(8);
+		}
+
+		if (action == ACTION_ANNOUNCE) {
+			this.response = response;
 		}
 	}
 

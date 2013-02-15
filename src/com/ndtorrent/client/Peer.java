@@ -186,16 +186,16 @@ public final class Peer extends Thread {
 	}
 
 	private void addReadyConnection(BTSocket socket) {
-		// incoming counter
-		// outgoing counter
-		Set<String> ip_set = new HashSet<String>();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel peer = (PeerChannel) key.attachment();
-			ip_set.add(peer.socket.getRemoteIP());
-		}
+		if (channel_selector.keys().size() >= MAX_PEERS)
+			return;
 
 		// Multiple connections with same IP are not allowed.
-		if (ip_set.contains(socket.getRemoteIP()) || ip_set.size() >= MAX_PEERS) {
+		String ip = socket.getRemoteIP();
+		for (SelectionKey key : channel_selector.keys()) {
+			// incoming counter
+			// outgoing counter
+			PeerChannel peer = (PeerChannel) key.attachment();
+			ip.equals(peer.socket.getRemoteIP());
 			socket.close();
 			return;
 		}

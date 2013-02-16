@@ -35,6 +35,11 @@ public final class HttpSession extends Session implements Runnable {
 	}
 
 	@Override
+	public String getUrl() {
+		return tracker;
+	}
+
+	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
 		if (!isUpdateDone())
 			return;

@@ -35,6 +35,8 @@ public abstract class Session {
 		return null;
 	}
 	
+	public abstract String getUrl();
+	
 	public abstract void update(Event event, long uploaded, long downloaded,
 			long left);
 

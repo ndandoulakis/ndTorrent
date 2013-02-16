@@ -58,6 +58,11 @@ public final class UdpSession extends Session implements Runnable {
 	}
 
 	@Override
+	public String getUrl() {
+		return tracker != null ? tracker.toString() : null;
+	}
+
+	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
 		if (!isUpdateDone())
 			return;
@@ -107,31 +112,36 @@ public final class UdpSession extends Session implements Runnable {
 		}
 	}
 
+	private int responseIntValue(int index) {
+		// Safe read
+		return index + 3 < response.limit() ? response.getInt(index) : 0;
+	}
+
 	@Override
 	public boolean isValidResponse() {
-		return response.getInt(4) == transaction_id;
+		return responseIntValue(4) == transaction_id;
 	}
 
 	@Override
 	public boolean isTrackerError() {
-		int action = response.getInt(0);
+		int action = responseIntValue(0);
 		return isValidResponse()
 				&& (action == ACTION_ERROR || action == ACTION_ERROR_LE);
 	}
 
 	@Override
 	public int getInterval() {
-		return response.getInt(8);
+		return responseIntValue(8);
 	}
 
 	@Override
 	public int getLeechers() {
-		return response.getInt(12);
+		return responseIntValue(12);
 	}
 
 	@Override
 	public int getSeeders() {
-		return response.getInt(16);
+		return responseIntValue(16);
 	}
 
 	@Override

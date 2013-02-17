@@ -113,7 +113,8 @@ public final class UdpSession extends Session implements Runnable {
 	}
 
 	private int responseIntValue(int index) {
-		// Safe read
+		// Safe read; make sure we examine the same object
+		final ByteBuffer response = this.response;
 		return index + 3 < response.limit() ? response.getInt(index) : 0;
 	}
 

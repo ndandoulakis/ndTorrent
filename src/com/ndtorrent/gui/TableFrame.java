@@ -31,6 +31,7 @@ public class TableFrame extends JInternalFrame {
 		getContentPane().add(scrollPane, BorderLayout.CENTER);
 
 		table = new JTable();
+		table.setShowGrid(false);
 		table.setFillsViewportHeight(true);
 		scrollPane.setViewportView(table);
 

@@ -12,27 +12,20 @@ import com.ndtorrent.client.status.TorrentInfo;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.JInternalFrame;
 import javax.swing.SwingUtilities;
 
 import java.util.List;
 
 import javax.swing.BoxLayout;
-import java.awt.BorderLayout;
 
 public class Frontend implements StatusObserver {
 
 	private JFrame frmNdtorrentAlpha;
 
 	private Client client = new Client();
-	private JTable connectionsTable;
-	private JInternalFrame connectionsFrame;
-	private JInternalFrame piecesFrame;
-	private JScrollPane scrollPane_1;
-	private JTable piecesTable;
+	private TableFrame trackersFrame;
+	private TableFrame piecesFrame;
+	private TableFrame connectionsFrame;
 	private BarRenderer torrentBar;
 
 	/**
@@ -80,46 +73,19 @@ public class Frontend implements StatusObserver {
 		torrentBar = new BarRenderer();
 		frmNdtorrentAlpha.getContentPane().add(torrentBar);
 
-		piecesFrame = new JInternalFrame("Pieces");
-		piecesFrame.setBorder(null);
-		piecesFrame.setFrameIcon(null);
+		trackersFrame = new TableFrame("Trackers");
+		frmNdtorrentAlpha.getContentPane().add(trackersFrame);
+
+		piecesFrame = new TableFrame("Pieces");
+		piecesFrame.setTableModel(new PiecesModel());
 		frmNdtorrentAlpha.getContentPane().add(piecesFrame);
 
-		scrollPane_1 = new JScrollPane();
-		scrollPane_1
-				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		piecesFrame.getContentPane().add(scrollPane_1, BorderLayout.CENTER);
-
-		piecesTable = new JTable();
-		piecesTable.setShowGrid(false);
-		piecesTable.setFillsViewportHeight(true);
-		scrollPane_1.setViewportView(piecesTable);
-		piecesFrame.setVisible(true);
-
-		connectionsFrame = new JInternalFrame("Connections");
-		connectionsFrame.setBorder(null);
-		connectionsFrame.setFrameIcon(null);
+		connectionsFrame = new TableFrame("Connections");
+		connectionsFrame.setTableModel(new ConnectionsModel());
 		frmNdtorrentAlpha.getContentPane().add(connectionsFrame);
-		connectionsFrame.getContentPane().setLayout(
-				new BoxLayout(connectionsFrame.getContentPane(),
-						BoxLayout.X_AXIS));
-
-		JScrollPane scrollPane = new JScrollPane();
-		connectionsFrame.getContentPane().add(scrollPane);
-		scrollPane
-				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-
-		connectionsTable = new JTable();
-		connectionsTable.setShowGrid(false);
-		connectionsTable.setFillsViewportHeight(true);
-		scrollPane.setViewportView(connectionsTable);
-		connectionsFrame.setVisible(true);
-
-		// Associate tables with proper models.
-		connectionsTable.setModel(new ConnectionsModel());
-		piecesTable.setModel(new PiecesModel());
 
 		client.setServerPort(Client.DEFAULT_PORT);
+
 		String info_hash = client.addTorrent("test_big.torrent");
 		client.addStatusObserver(this, info_hash);
 
@@ -130,7 +96,7 @@ public class Frontend implements StatusObserver {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				((ConnectionsModel) connectionsTable.getModel())
+				((ConnectionsModel) connectionsFrame.getTableModel())
 						.setConnections(connnections);
 			}
 		});
@@ -141,7 +107,7 @@ public class Frontend implements StatusObserver {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				((PiecesModel) piecesTable.getModel()).setPieces(pieces);
+				((PiecesModel) piecesFrame.getTableModel()).setPieces(pieces);
 			}
 		});
 	}

@@ -73,7 +73,7 @@ public final class Peer extends Thread {
 
 		while (!stop_requested) {
 			try {
-				//updateTrackerSessions();
+				// updateTrackerSessions();
 				// update peer Set
 
 				// a Selector doesn't clear the selected keys so it's our
@@ -489,10 +489,11 @@ public final class Peer extends Thread {
 			pieces.add(new PieceInfo(entry.getKey(), entry.getValue()));
 		}
 
+		String info_hash = meta.getInfoHash();
 		for (StatusObserver o : observers) {
-			o.asyncConnections(connections);
-			o.asyncPieces(pieces);
-			o.asyncTorrentStatus(new TorrentInfo(torrent));
+			o.asyncConnections(connections, info_hash);
+			o.asyncPieces(pieces, info_hash);
+			o.asyncTorrentStatus(new TorrentInfo(torrent), info_hash);
 		}
 	}
 }

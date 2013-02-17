@@ -92,10 +92,11 @@ public class Frontend implements StatusObserver {
 	}
 
 	@Override
-	public void asyncConnections(final List<ConnectionInfo> connnections) {
+	public void asyncConnections(final List<ConnectionInfo> connnections, String info_hash) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
+				// if (!observing(info_hash)) return;
 				((ConnectionsModel) connectionsFrame.getTableModel())
 						.setConnections(connnections);
 			}
@@ -103,20 +104,22 @@ public class Frontend implements StatusObserver {
 	}
 
 	@Override
-	public void asyncPieces(final List<PieceInfo> pieces) {
+	public void asyncPieces(final List<PieceInfo> pieces, String info_hash) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
+				// if (!observing(info_hash)) return;
 				((PiecesModel) piecesFrame.getTableModel()).setPieces(pieces);
 			}
 		});
 	}
 
 	@Override
-	public void asyncTorrentStatus(final TorrentInfo torrent) {
+	public void asyncTorrentStatus(final TorrentInfo torrent, String info_hash) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
+				// if (!observing(info_hash)) return;
 				torrentBar.setBits(torrent.getBitfield(), torrent.numOfPieces());
 			}
 		});

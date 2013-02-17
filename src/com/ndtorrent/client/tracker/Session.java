@@ -32,12 +32,11 @@ public abstract class Session {
 			else if (url.startsWith("http"))
 				return new HttpSession(url, client_info, info_hash);
 
-		// TODO return new NullSession(URL); null URL or unknown URL protocol
-		return null;
+		return new NullSession(url, client_info, info_hash);
 	}
-	
+
 	public abstract String getUrl();
-	
+
 	public abstract void update(Event event, long uploaded, long downloaded,
 			long left);
 

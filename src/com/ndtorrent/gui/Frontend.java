@@ -9,6 +9,7 @@ import com.ndtorrent.client.status.ConnectionInfo;
 import com.ndtorrent.client.status.PieceInfo;
 import com.ndtorrent.client.status.StatusObserver;
 import com.ndtorrent.client.status.TorrentInfo;
+import com.ndtorrent.client.status.TrackerInfo;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -17,6 +18,7 @@ import javax.swing.SwingUtilities;
 import java.util.List;
 
 import javax.swing.BoxLayout;
+import javax.swing.JSeparator;
 
 public class Frontend implements StatusObserver {
 
@@ -27,6 +29,9 @@ public class Frontend implements StatusObserver {
 	private TableFrame piecesFrame;
 	private TableFrame connectionsFrame;
 	private BarRenderer torrentBar;
+	private JSeparator separator;
+	private JSeparator separator_1;
+	private JSeparator separator_2;
 
 	/**
 	 * Launch the application.
@@ -73,12 +78,22 @@ public class Frontend implements StatusObserver {
 		torrentBar = new BarRenderer();
 		frmNdtorrentAlpha.getContentPane().add(torrentBar);
 
+		separator = new JSeparator();
+		frmNdtorrentAlpha.getContentPane().add(separator);
+
 		trackersFrame = new TableFrame("Trackers");
+		trackersFrame.setTableModel(new TrackersModel());
 		frmNdtorrentAlpha.getContentPane().add(trackersFrame);
+
+		separator_1 = new JSeparator();
+		frmNdtorrentAlpha.getContentPane().add(separator_1);
 
 		piecesFrame = new TableFrame("Pieces");
 		piecesFrame.setTableModel(new PiecesModel());
 		frmNdtorrentAlpha.getContentPane().add(piecesFrame);
+
+		separator_2 = new JSeparator();
+		frmNdtorrentAlpha.getContentPane().add(separator_2);
 
 		connectionsFrame = new TableFrame("Connections");
 		connectionsFrame.setTableModel(new ConnectionsModel());
@@ -92,7 +107,8 @@ public class Frontend implements StatusObserver {
 	}
 
 	@Override
-	public void asyncConnections(final List<ConnectionInfo> connnections, String info_hash) {
+	public void asyncConnections(final List<ConnectionInfo> connnections,
+			String info_hash) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
@@ -115,11 +131,23 @@ public class Frontend implements StatusObserver {
 	}
 
 	@Override
-	public void asyncTorrentStatus(final TorrentInfo torrent, String info_hash) {
+	public void asyncTrackers(final List<TrackerInfo> trackers, String info_hash) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
 				// if (!observing(info_hash)) return;
+				((TrackersModel) trackersFrame.getTableModel())
+						.setTrackers(trackers);
+			}
+		});
+	}
+
+	@Override
+	public void asyncTorrentStatus(final TorrentInfo torrent, String info_hash) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				// ? check info_hash
 				torrentBar.setBits(torrent.getBitfield(), torrent.numOfPieces());
 			}
 		});

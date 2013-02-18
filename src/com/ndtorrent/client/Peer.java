@@ -17,6 +17,7 @@ import com.ndtorrent.client.status.ConnectionInfo;
 import com.ndtorrent.client.status.PieceInfo;
 import com.ndtorrent.client.status.StatusObserver;
 import com.ndtorrent.client.status.TorrentInfo;
+import com.ndtorrent.client.status.TrackerInfo;
 import com.ndtorrent.client.tracker.Event;
 import com.ndtorrent.client.tracker.Session;
 
@@ -488,12 +489,18 @@ public final class Peer extends Thread {
 		for (Entry<Integer, Piece> entry : partial_entries) {
 			pieces.add(new PieceInfo(entry.getKey(), entry.getValue()));
 		}
+		
+		List<TrackerInfo> trackers = new ArrayList<TrackerInfo>();
+		for (Session session: sessions) {
+			trackers.add(new TrackerInfo(session));
+		}
 
 		String info_hash = meta.getInfoHash();
 		for (StatusObserver o : observers) {
-			o.asyncConnections(connections, info_hash);
-			o.asyncPieces(pieces, info_hash);
 			o.asyncTorrentStatus(new TorrentInfo(torrent), info_hash);
+			o.asyncTrackers(trackers, info_hash);
+			o.asyncPieces(pieces, info_hash);
+			o.asyncConnections(connections, info_hash);
 		}
 	}
 }

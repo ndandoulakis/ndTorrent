@@ -127,7 +127,7 @@ public final class Peer extends Thread {
 
 	private void updateTrackerSessions() {
 		for (Session session : sessions) {
-			if (!session.isUpdateDone())
+			if (session.isUpdating())
 				continue;
 			// if invalid response, probably is connection error
 			// if session.intervalEnded

@@ -25,8 +25,8 @@ public final class NullSession extends Session {
 	}
 
 	@Override
-	public boolean isUpdateDone() {
-		return true;
+	public boolean isUpdating() {
+		return false;
 	}
 
 	@Override
@@ -57,6 +57,11 @@ public final class NullSession extends Session {
 	@Override
 	public Collection<InetSocketAddress> getPeers() {
 		return Collections.emptyList();
+	}
+
+	@Override
+	public boolean isConnectionTimeout() {
+		return false;
 	}
 
 }

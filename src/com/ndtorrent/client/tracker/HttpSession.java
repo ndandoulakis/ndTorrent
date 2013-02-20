@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -26,6 +27,8 @@ public final class HttpSession extends Session implements Runnable {
 	private String tracker;
 	private String tracker_id;
 
+	private volatile boolean is_timeout;
+
 	private String request;
 	private volatile SortedMap<String, Object> response = new TreeMap<String, Object>();
 
@@ -40,9 +43,16 @@ public final class HttpSession extends Session implements Runnable {
 	}
 
 	@Override
+	public boolean isConnectionTimeout() {
+		return is_timeout;
+	}
+
+	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
-		if (!isUpdateDone())
+		if (isUpdating())
 			return;
+
+		is_timeout = false;
 
 		try {
 			// Prepare Request
@@ -64,17 +74,20 @@ public final class HttpSession extends Session implements Runnable {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
+
 	}
 
 	@Override
-	public boolean isUpdateDone() {
-		return thread == null || !thread.isAlive();
+	public boolean isUpdating() {
+		return thread != null && thread.isAlive();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void run() {
 		System.out.println("http session running");
+
+		response = new TreeMap<String, Object>();
 
 		URLConnection connection = null;
 		try {
@@ -89,8 +102,9 @@ public final class HttpSession extends Session implements Runnable {
 			if (response.containsKey("tracker id"))
 				tracker_id = (String) response.get("tracker id");
 
+		} catch (SocketTimeoutException e) {
+			is_timeout = true;
 		} catch (IOException e) {
-			response = new TreeMap<String, Object>();
 			// TODO save the connection error
 			e.printStackTrace();
 		} finally {
@@ -102,7 +116,7 @@ public final class HttpSession extends Session implements Runnable {
 
 	@Override
 	public boolean isValidResponse() {
-		return !response.isEmpty();
+		return response != null && !response.isEmpty();
 	}
 
 	@Override

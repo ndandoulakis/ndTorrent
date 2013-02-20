@@ -40,6 +40,8 @@ public final class UdpSession extends Session implements Runnable {
 	private ByteBuffer request_body;
 	private ByteBuffer request = ByteBuffer.allocate(MAX_REQUEST_LENGTH);
 	private volatile ByteBuffer response = ByteBuffer.allocate(0);
+	
+	private volatile boolean is_timeout; 
 
 	private int timeStep = 1;
 	private int transaction_id = -1;
@@ -61,11 +63,18 @@ public final class UdpSession extends Session implements Runnable {
 	public String getUrl() {
 		return tracker != null ? tracker.toString() : null;
 	}
+	
+	@Override
+	public boolean isConnectionTimeout() {
+		return is_timeout;
+	}
 
 	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
-		if (!isUpdateDone())
+		if (isUpdating())
 			return;
+		
+		is_timeout = false;
 
 		request_body = ByteBuffer.allocate(REQUEST_BODY_LENGTH);
 		try {
@@ -90,8 +99,8 @@ public final class UdpSession extends Session implements Runnable {
 	}
 
 	@Override
-	public boolean isUpdateDone() {
-		return thread == null || !thread.isAlive();
+	public boolean isUpdating() {
+		return thread != null && thread.isAlive();
 	}
 
 	@Override
@@ -171,8 +180,10 @@ public final class UdpSession extends Session implements Runnable {
 			int timeout = 15 * timeStep;
 			timeStep *= 2;
 
-			if (timeout > MAX_TIMEOUT)
+			if (timeout > MAX_TIMEOUT) {
+				is_timeout = true;
 				return;
+			}
 
 			transaction_id = random.nextInt();
 

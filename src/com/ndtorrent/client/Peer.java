@@ -132,14 +132,22 @@ public final class Peer extends Thread {
 				continue;
 			if (session.isConnectionTimeout())
 				continue;
-			// if (!session.isValidResponse()) // connection error?
-			// continue;
+			if (session.isConnectionError())
+				continue;
+			if (session.isTrackerError())
+				continue;
 
-			Event last_event = session.lastEvent();
-			Event event = last_event == null ? Event.STARTED : Event.REGULAR;
 			long interval = now - session.updatedAt().longValue();
-			if (interval > session.getInterval() * 1e9)
-				session.update(event, 0, 0, torrent.getRemainingLength());
+			if (interval < session.getInterval() * 1e9)
+				continue;
+
+			Event event = session.lastEvent();
+			if (event == null)
+				event = Event.STARTED;
+			else if (event == Event.STARTED && session.isValidResponse())
+				event = Event.REGULAR;
+
+			session.update(event, 0, 0, torrent.getRemainingLength());
 		}
 
 		String url = "udp://tracker.openbittorrent.com:80/announce";

@@ -74,7 +74,7 @@ public final class Peer extends Thread {
 
 		while (!stop_requested) {
 			try {
-				// updateTrackerSessions();
+				updateTrackerSessions();
 				// update peer Set
 
 				// a Selector doesn't clear the selected keys so it's our
@@ -148,23 +148,6 @@ public final class Peer extends Thread {
 				event = Event.REGULAR;
 
 			session.update(event, 0, 0, torrent.getRemainingLength());
-		}
-
-		String url = "udp://tracker.openbittorrent.com:80/announce";
-
-		Session session = Session.create(url, client_info, meta.getInfoHash());
-		session.update(Event.STARTED, 0, 0, torrent.getRemainingLength());
-
-		if (session.isValidResponse()) {
-			if (session.isTrackerError())
-				System.out.println("tracker error!");
-			else {
-				System.out.println(session.getLeechers());
-				System.out.println(session.getSeeders());
-				System.out.println(session.getPeers());
-			}
-		} else {
-			System.out.println("invalid tracker response");
 		}
 	}
 

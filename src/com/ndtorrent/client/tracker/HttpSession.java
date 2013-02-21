@@ -27,6 +27,7 @@ public final class HttpSession extends Session implements Runnable {
 	private String tracker;
 	private String tracker_id;
 
+	private volatile boolean is_connection_error;
 	private volatile boolean is_timeout;
 	private volatile Long updated_at = 0L;
 	private volatile Event last_event;
@@ -43,17 +44,22 @@ public final class HttpSession extends Session implements Runnable {
 	public String getUrl() {
 		return tracker;
 	}
-	
+
 	@Override
 	public Long updatedAt() {
 		return updated_at;
 	}
 
 	@Override
+	public boolean isConnectionError() {
+		return is_connection_error;
+	}
+
+	@Override
 	public boolean isConnectionTimeout() {
 		return is_timeout;
 	}
-	
+
 	@Override
 	public Event lastEvent() {
 		return last_event;
@@ -63,9 +69,10 @@ public final class HttpSession extends Session implements Runnable {
 	public void update(Event event, long uploaded, long downloaded, long left) {
 		if (isUpdating())
 			return;
-		
+
 		last_event = event;
 
+		is_connection_error = false;
 		is_timeout = false;
 
 		try {
@@ -120,6 +127,7 @@ public final class HttpSession extends Session implements Runnable {
 			is_timeout = true;
 		} catch (IOException e) {
 			// TODO save the connection error
+			is_connection_error = true;
 			e.printStackTrace();
 		} finally {
 			// On HTTP exception, i.e. error 400, the connection remains open.

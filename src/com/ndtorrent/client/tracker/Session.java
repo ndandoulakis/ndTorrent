@@ -44,6 +44,8 @@ public abstract class Session {
 	
 	public abstract Long updatedAt();
 	
+	public abstract boolean isConnectionError();
+	
 	public abstract boolean isConnectionTimeout();
 
 	public abstract boolean isUpdating();

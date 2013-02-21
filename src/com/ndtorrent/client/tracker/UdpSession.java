@@ -75,7 +75,7 @@ public final class UdpSession extends Session implements Runnable {
 	public boolean isConnectionTimeout() {
 		return is_timeout;
 	}
-	
+
 	@Override
 	public Event lastEvent() {
 		return last_event;
@@ -87,7 +87,7 @@ public final class UdpSession extends Session implements Runnable {
 			return;
 
 		is_timeout = false;
-		
+
 		last_event = event;
 
 		request_body = ByteBuffer.allocate(REQUEST_BODY_LENGTH);
@@ -110,6 +110,11 @@ public final class UdpSession extends Session implements Runnable {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public boolean isConnectionError() {
+		return false;
 	}
 
 	@Override

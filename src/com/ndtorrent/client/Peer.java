@@ -137,7 +137,7 @@ public final class Peer extends Thread {
 			if (session.isTrackerError())
 				continue;
 
-			long interval = now - session.updatedAt().longValue();
+			long interval = now - session.updatedAt();
 			if (interval < session.getInterval() * 1e9)
 				continue;
 

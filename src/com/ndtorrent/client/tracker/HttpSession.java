@@ -27,10 +27,10 @@ public final class HttpSession extends Session implements Runnable {
 	private String tracker;
 	private String tracker_id;
 
-	private volatile boolean is_connection_error;
-	private volatile boolean is_timeout;
-	private volatile Long updated_at = 0L;
-	private volatile Event last_event;
+	private boolean is_connection_error;
+	private boolean is_timeout;
+	private long updated_at;
+	private Event last_event;
 
 	private String request;
 	private volatile SortedMap<String, Object> response = new TreeMap<String, Object>();
@@ -46,7 +46,7 @@ public final class HttpSession extends Session implements Runnable {
 	}
 
 	@Override
-	public Long updatedAt() {
+	public long updatedAt() {
 		return updated_at;
 	}
 
@@ -71,7 +71,6 @@ public final class HttpSession extends Session implements Runnable {
 			return;
 
 		last_event = event;
-
 		is_connection_error = false;
 		is_timeout = false;
 

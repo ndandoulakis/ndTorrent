@@ -10,8 +10,6 @@ public final class NullSession extends Session {
 
 	private String url;
 
-	private static Long ZERO = new Long(0);
-
 	protected NullSession(String url, ClientInfo client_info, String info_hash) {
 		super(client_info, info_hash);
 		this.url = url;
@@ -72,8 +70,8 @@ public final class NullSession extends Session {
 	}
 
 	@Override
-	public Long updatedAt() {
-		return ZERO;
+	public long updatedAt() {
+		return 0;
 	}
 
 	@Override

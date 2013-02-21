@@ -15,6 +15,8 @@ import com.ndtorrent.client.ClientInfo;
 // http://bittorrent.org/beps/bep_0034.html
 
 public abstract class Session {
+	// Session and its subclasses are not thread safe.
+	// Do not call any query method while Session.isUpdating() returns true.
 
 	protected ClientInfo client_info;
 	protected String info_hash;
@@ -39,13 +41,13 @@ public abstract class Session {
 
 	public abstract void update(Event event, long uploaded, long downloaded,
 			long left);
-	
+
 	public abstract Event lastEvent();
-	
-	public abstract Long updatedAt();
-	
+
+	public abstract long updatedAt();
+
 	public abstract boolean isConnectionError();
-	
+
 	public abstract boolean isConnectionTimeout();
 
 	public abstract boolean isUpdating();

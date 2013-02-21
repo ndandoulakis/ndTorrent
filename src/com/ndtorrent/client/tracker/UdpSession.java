@@ -41,9 +41,9 @@ public final class UdpSession extends Session implements Runnable {
 	private ByteBuffer request = ByteBuffer.allocate(MAX_REQUEST_LENGTH);
 	private volatile ByteBuffer response = ByteBuffer.allocate(0);
 
-	private volatile boolean is_timeout;
-	private volatile Long updated_at = 0L;
-	private volatile Event last_event;
+	private boolean is_timeout;
+	private long updated_at;
+	private Event last_event;
 
 	private int timeStep = 1;
 	private int transaction_id = -1;
@@ -67,7 +67,7 @@ public final class UdpSession extends Session implements Runnable {
 	}
 
 	@Override
-	public Long updatedAt() {
+	public long updatedAt() {
 		return updated_at;
 	}
 
@@ -86,9 +86,8 @@ public final class UdpSession extends Session implements Runnable {
 		if (isUpdating())
 			return;
 
-		is_timeout = false;
-
 		last_event = event;
+		is_timeout = false;
 
 		request_body = ByteBuffer.allocate(REQUEST_BODY_LENGTH);
 		try {

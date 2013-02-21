@@ -126,14 +126,20 @@ public final class Peer extends Thread {
 	}
 
 	private void updateTrackerSessions() {
+		long now = System.nanoTime();
 		for (Session session : sessions) {
 			if (session.isUpdating())
 				continue;
-			// if invalid response, probably is connection error
-			// if session.intervalEnded
-			// session.update(Event.STARTED, 0, 0, remaining);
-			// on first request use Event.STARTED
-			// for regular update use Event.NONE
+			if (session.isConnectionTimeout())
+				continue;
+			// if (!session.isValidResponse()) // connection error?
+			// continue;
+
+			Event last_event = session.lastEvent();
+			Event event = last_event == null ? Event.STARTED : Event.REGULAR;
+			long interval = now - session.updatedAt().longValue();
+			if (interval > session.getInterval() * 1e9)
+				session.update(event, 0, 0, torrent.getRemainingLength());
 		}
 
 		String url = "udp://tracker.openbittorrent.com:80/announce";
@@ -489,9 +495,9 @@ public final class Peer extends Thread {
 		for (Entry<Integer, Piece> entry : partial_entries) {
 			pieces.add(new PieceInfo(entry.getKey(), entry.getValue()));
 		}
-		
+
 		List<TrackerInfo> trackers = new ArrayList<TrackerInfo>();
-		for (Session session: sessions) {
+		for (Session session : sessions) {
 			trackers.add(new TrackerInfo(session));
 		}
 

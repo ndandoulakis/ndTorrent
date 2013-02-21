@@ -40,6 +40,10 @@ public abstract class Session {
 	public abstract void update(Event event, long uploaded, long downloaded,
 			long left);
 	
+	public abstract Event lastEvent();
+	
+	public abstract Long updatedAt();
+	
 	public abstract boolean isConnectionTimeout();
 
 	public abstract boolean isUpdating();

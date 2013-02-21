@@ -28,6 +28,8 @@ public final class HttpSession extends Session implements Runnable {
 	private String tracker_id;
 
 	private volatile boolean is_timeout;
+	private volatile Long updated_at = 0L;
+	private volatile Event last_event;
 
 	private String request;
 	private volatile SortedMap<String, Object> response = new TreeMap<String, Object>();
@@ -41,16 +43,28 @@ public final class HttpSession extends Session implements Runnable {
 	public String getUrl() {
 		return tracker;
 	}
+	
+	@Override
+	public Long updatedAt() {
+		return updated_at;
+	}
 
 	@Override
 	public boolean isConnectionTimeout() {
 		return is_timeout;
+	}
+	
+	@Override
+	public Event lastEvent() {
+		return last_event;
 	}
 
 	@Override
 	public void update(Event event, long uploaded, long downloaded, long left) {
 		if (isUpdating())
 			return;
+		
+		last_event = event;
 
 		is_timeout = false;
 
@@ -110,6 +124,7 @@ public final class HttpSession extends Session implements Runnable {
 		} finally {
 			// On HTTP exception, i.e. error 400, the connection remains open.
 			((HttpURLConnection) connection).disconnect();
+			updated_at = System.nanoTime();
 		}
 
 	}

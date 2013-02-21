@@ -1,7 +1,7 @@
 package com.ndtorrent.client.tracker;
 
 public enum Event {
-	NONE, COMPLETED, STARTED, STOPPED;
+	REGULAR, COMPLETED, STARTED, STOPPED;
 
 	public Integer toInteger() {
 		switch (this) {

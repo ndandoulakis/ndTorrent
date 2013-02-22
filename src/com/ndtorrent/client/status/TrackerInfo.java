@@ -8,6 +8,7 @@ public final class TrackerInfo {
 	private final int seeders;
 	private final int leechers;
 	private final int interval;
+	private final long updated_at;
 	private final boolean is_updating;
 	private final boolean is_error;
 	private final boolean is_timeout;
@@ -16,6 +17,7 @@ public final class TrackerInfo {
 	public TrackerInfo(Session session) {
 		url = session.getUrl();
 		is_updating = session.isUpdating();
+		updated_at = is_updating ? 0 : session.updatedAt();
 		seeders = is_updating ? 0 : session.getSeeders();
 		leechers = is_updating ? 0 : session.getLeechers();
 		interval = is_updating ? 0 : session.getInterval();
@@ -38,6 +40,14 @@ public final class TrackerInfo {
 
 	public int getInterval() {
 		return interval;
+	}
+	
+	public long getUpdatedAt() {
+		return updated_at;
+	}
+	
+	public boolean isUpdating() {
+		return is_updating;
 	}
 
 	public boolean isConnectionError() {

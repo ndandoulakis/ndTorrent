@@ -41,9 +41,10 @@ public class TrackersModel extends AbstractTableModel {
 		switch (columnIndex) {
 		case 0:
 			return info.getUrl();
-			// TODO case status
+		case 1:
+			return statusValue(info);
 		case 2:
-			return info.getInterval();
+			return getIntervalValue(info);
 		case 3:
 			return info.getSeeders();
 		case 4:
@@ -53,4 +54,23 @@ public class TrackersModel extends AbstractTableModel {
 		}
 	}
 
+	private String statusValue(TrackerInfo info) {
+		if (info.isUpdating())
+			return "updating...";
+		else if (info.isConnectionError())
+			return "connection error";
+		else if (info.isConnectionTimeout())
+			return "timed out";
+		else if (info.isTrackerError())
+			return "tracker error";
+		else
+			return new String("OK");
+	}
+
+	private String getIntervalValue(TrackerInfo info) {
+		long now = System.nanoTime();
+		long interval = now - info.getUpdatedAt();
+		int value = info.getInterval() - (int) (interval / 1e9);
+		return (value < 0 ? 0 : value) + " secs";
+	}
 }

@@ -46,12 +46,18 @@ public final class Peer extends Thread {
 		this.meta = meta_info;
 		torrent = new Torrent(meta_info, client_info.getStorageLocation());
 
+		String announce = meta.getAnnounce();
 		List<String> trackers = meta.getAnnounceList();
-		if (trackers.isEmpty())
-			trackers.add(meta.getAnnounce());
+		if (trackers.isEmpty() && announce != null) {
+			trackers.add(announce);
+		}
 		for (String url : trackers) {
 			sessions.add(Session.create(url, client_info, meta.getInfoHash()));
 		}
+
+		sessions.add(Session.create(
+				"udp://tracker.openbittorrent.com:80/announce", client_info,
+				meta.getInfoHash()));
 	}
 
 	public void close() {

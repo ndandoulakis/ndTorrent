@@ -29,7 +29,7 @@ public final class UdpSession extends Session implements Runnable {
 	static final int REQUEST_BODY_LENGTH = 2 * 20 + 3 * 8 + 4 * 4 + 2;
 	static final int MAX_REQUEST_LENGTH = 100;
 	static final int MAX_RESPONSE_LENGTH = 1500;
-	static final int MAX_TIMEOUT = 2 * 60;
+	static final int MAX_TIMEOUT = 15 * 8; // use the right factor to adjust it
 	static final int DEFAULT_PORT = 80;
 
 	private Thread thread;
@@ -39,7 +39,7 @@ public final class UdpSession extends Session implements Runnable {
 	private DatagramSocket socket;
 	private ByteBuffer request_body;
 	private ByteBuffer request = ByteBuffer.allocate(MAX_REQUEST_LENGTH);
-	private volatile ByteBuffer response = ByteBuffer.allocate(0);
+	private ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
 
 	private boolean is_timeout;
 	private long updated_at;
@@ -105,6 +105,7 @@ public final class UdpSession extends Session implements Runnable {
 
 			// Run
 			thread = new Thread(this);
+			thread.start();
 
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
@@ -141,8 +142,7 @@ public final class UdpSession extends Session implements Runnable {
 	}
 
 	private int responseIntValue(int index) {
-		// Safe read; make sure we examine the same object
-		final ByteBuffer response = this.response;
+		// Safe read
 		return index + 3 < response.limit() ? response.getInt(index) : 0;
 	}
 
@@ -176,8 +176,6 @@ public final class UdpSession extends Session implements Runnable {
 	@Override
 	public Collection<InetSocketAddress> getPeers() {
 		ArrayList<InetSocketAddress> result = new ArrayList<InetSocketAddress>();
-
-		final ByteBuffer response = this.response;
 		for (int ofs = 20; ofs < response.limit(); ofs += 6) {
 			if (ofs + 6 > MAX_RESPONSE_LENGTH)
 				break;
@@ -191,14 +189,12 @@ public final class UdpSession extends Session implements Runnable {
 	// Protocol //
 
 	private void performAction(int action) throws IOException {
-		ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
 		do {
 			if (connectionExpired() && action != ACTION_CONNECT)
 				performAction(ACTION_CONNECT);
 
 			int timeout = 15 * timeStep;
 			timeStep *= 2;
-
 			if (timeout > MAX_TIMEOUT) {
 				is_timeout = true;
 				return;
@@ -244,9 +240,6 @@ public final class UdpSession extends Session implements Runnable {
 			connection_id = response.getLong(8);
 		}
 
-		if (action == ACTION_ANNOUNCE) {
-			this.response = response;
-		}
 	}
 
 	private boolean connectionExpired() {

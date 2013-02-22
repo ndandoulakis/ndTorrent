@@ -90,6 +90,7 @@ public final class HttpSession extends Session implements Runnable {
 
 			// Run
 			thread = new Thread(this);
+			thread.start();
 
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();

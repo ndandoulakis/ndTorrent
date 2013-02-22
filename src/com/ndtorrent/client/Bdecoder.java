@@ -17,7 +17,7 @@ public final class Bdecoder {
 	// BenDict ::= d (BenString BenObject)* e
 	// BenString ::= length : bytes{length}
 	// BenInteger ::= i "0|-?[1-9]\\d*" e
-	
+
 	// Various methods currently exploit the O(1) String.substring
 	// implementation; the overall runtime complexity is O(n).
 
@@ -28,12 +28,14 @@ public final class Bdecoder {
 	}
 
 	public static String utf8EncodedString(Object binaryText) {
-		try {
-			return new String(((String) binaryText).getBytes("ISO-8859-1"), "UTF-8");
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+		if (binaryText != null)
+			try {
+				return new String(((String) binaryText).getBytes("ISO-8859-1"),
+						"UTF-8");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		return null;
 	}
 
 	static DecodedResult decodeBenObject(String text) {

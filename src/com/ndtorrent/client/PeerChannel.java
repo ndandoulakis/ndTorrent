@@ -130,6 +130,10 @@ public final class PeerChannel {
 		return am_interested;
 	}
 
+	public boolean isInterested() {
+		return is_interested;
+	}
+
 	public void updateIsChoked(boolean choke) {
 		if (is_choked == choke)
 			return;
@@ -159,6 +163,8 @@ public final class PeerChannel {
 	}
 
 	public void addPiece(Message m) {
+		if (m == null)
+			return;
 		if (!m.isPiece())
 			throw new IllegalArgumentException(m.getType());
 
@@ -202,7 +208,7 @@ public final class PeerChannel {
 			Message m = iter.next();
 			if (non_pieces && m.isPiece())
 				continue;
-			if (!m.isLoadingDone())
+			if (!m.isPrepared())
 				continue;
 			if (socket.hasOutputMessage())
 				return;

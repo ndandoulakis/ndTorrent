@@ -35,7 +35,7 @@ public final class Peer extends Thread {
 
 	private List<Session> sessions = new ArrayList<Session>();
 
-	// Expose status through Local DTO messages.
+	// Expose status through local Data Transfer Object messages.
 	private long last_status_at;
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
@@ -360,6 +360,12 @@ public final class Peer extends Thread {
 		// unchoke 1..3 regular peers
 		// LEECHER MODE
 		// regular if is_interested and fast upload rate
+		for (SelectionKey key : channel_selector.keys()) {
+			PeerChannel channel = (PeerChannel) key.attachment();
+			// For testing, choke only not interested peers
+			boolean choke = channel.isInterested() == false;
+			channel.updateIsChoked(choke);
+		}
 
 		// System.out.println("regular unchoking");
 	}

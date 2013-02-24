@@ -3,7 +3,7 @@ package com.ndtorrent.client;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
-public class Message {
+public final class Message {
 	protected static final byte CHOKE = 0;
 	protected static final byte UNCHOKE = 1;
 	protected static final byte INTERESTED = 2;
@@ -14,12 +14,12 @@ public class Message {
 	protected static final byte PIECE = 7;
 	protected static final byte CANCEL = 8;
 
-	protected ByteBuffer data; // <ID><Payload>
-	protected long timestamp;
+	private ByteBuffer data; // <ID><Payload>
+	private long timestamp;
 
-	protected volatile boolean is_prepared = true;
+	private volatile boolean is_prepared = true;
 
-	protected Message(ByteBuffer data) {
+	private Message(ByteBuffer data) {
 		this.data = data;
 	}
 

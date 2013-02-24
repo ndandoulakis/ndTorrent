@@ -195,7 +195,7 @@ public final class BTSocket {
 		if (!hasInputMessage())
 			return null;
 
-		Message m = new Message(input_data);
+		Message m = Message.wrap(input_data);
 		input_prefix.rewind();
 		input_data.rewind();
 		input_data = null;

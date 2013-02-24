@@ -26,6 +26,7 @@ public final class Torrent {
 
 	private Map<Integer, Piece> partial = new HashMap<Integer, Piece>();
 
+	private ExecutorService reader;
 	private ExecutorService writer;
 
 	public Torrent(MetaInfo meta, String storage_location) {
@@ -54,11 +55,18 @@ public final class Torrent {
 			f.createFileAndPath(parent_path);
 		}
 
+		reader = Executors.newSingleThreadExecutor();
 		writer = Executors.newSingleThreadExecutor();
 	}
 
 	public void close() {
-		// shutdown services, files, etc
+		if (reader != null)
+			reader.shutdownNow();
+
+		if (writer != null)
+			writer.shutdownNow();
+
+		// TODO close files
 	}
 
 	public long getRemainingLength() {
@@ -149,29 +157,49 @@ public final class Torrent {
 	}
 
 	public Message loadBlock(Message request) {
-		return new Message(null) {
-			// The data are read the first time getData() is called.
+		// The corresponding piece must be registered and NOT in partial state,
+		// otherwise the block will be discarded.
+		final int index = request.getPieceIndex();
+		if (unregistered.get(index) || partial.containsKey(index))
+			return null;
 
+		final Message block = Message.newBlock(index, request.getBlockBegin(),
+				request.getBlockLength());
+
+		block.setPreparedStatus(false);
+
+		reader.submit(new Runnable() {
 			@Override
-			public byte getID() {
-				return PIECE;
+			public void run() {
+				readBlock(index, block);
+				block.setPreparedStatus(true);
 			}
+		});
 
-			@Override
-			public int getLength() {
-				return 0;
-			}
+		return block;
+	}
 
-			@Override
-			public ByteBuffer getData() {
-				if (data == null) {
-					data = ByteBuffer.allocate(getLength());
-					data.put(getID());
-					// read ...
+	private boolean readBlock(int index, Message block) {
+		// Data remaining length is expected to match block's length.
+		ByteBuffer data = block.getData();
+		long piece_offset = index * piece_length;
+		int start = Arrays.binarySearch(files, Long.valueOf(piece_offset));
+		start = Math.max(start, (-start - 1) - 1);
+		int block_begin = block.getBlockBegin();
+		for (int i = start; i < files.length; i++) {
+			BTFile f = files[i];
+			try {
+				long ofs = index * piece_length + block_begin - f.getOffset();
+				f.read(data, ofs < 0 ? 0 : ofs);
+				if (!data.hasRemaining()) {
+					return true;
 				}
-				return data;
+			} catch (IOException e) {
+				e.printStackTrace();
+				break;
 			}
-		};
+		}
+		return false;
 	}
 
 }

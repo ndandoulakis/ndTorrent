@@ -16,6 +16,8 @@ public class Message {
 
 	protected ByteBuffer data; // <ID><Payload>
 	protected long timestamp;
+	
+	protected volatile boolean is_prepared = true;
 
 	protected Message(ByteBuffer data) {
 		this.data = data;
@@ -70,10 +72,15 @@ public class Message {
 		return isPiece() ? getPayloadLength() - 8 : data.getInt(9);
 	}
 
-	public boolean isLoadingDone() {
-		// Useful for asynchronous messages.
+	public boolean isPrepared() {
+		// Returns True by default. 
+		return is_prepared;
+	}
+	
+	public void setPreparedStatus(boolean is_prepared) {
+		// Useful for asynchronous message preparation.
 		// For example, background threads may be filling the data.
-		return true;
+		this.is_prepared = is_prepared;
 	}
 
 	public boolean sameBlockRegion(Message other) {
@@ -146,6 +153,15 @@ public class Message {
 	public static Message newBlockRequest(int index, int offset, int length) {
 		ByteBuffer data = ByteBuffer.allocate(1 + 3 * 4);
 		data.put(REQUEST);
+		data.putInt(index);
+		data.putInt(offset);
+		data.putInt(length);
+		return new Message(data);
+	}
+	
+	public static Message newBlock(int index, int offset, int length) {
+		ByteBuffer data = ByteBuffer.allocate(1 + 3 * 4 + length);
+		data.put(PIECE);
 		data.putInt(index);
 		data.putInt(offset);
 		data.putInt(length);

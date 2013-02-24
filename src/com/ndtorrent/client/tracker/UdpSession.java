@@ -226,8 +226,12 @@ public final class UdpSession extends Session implements Runnable {
 				DatagramPacket in = new DatagramPacket(resBlock,
 						resBlock.length);
 				socket.setSoTimeout(timeout * 1000);
-				socket.receive(in);
-				response.limit(in.getLength());
+				do {
+					socket.receive(in);
+					response.limit(in.getLength());
+					// We continue to loop on invalid responses assuming the
+					// socket received old/garbage packet.
+				} while (!isValidResponse());
 			} catch (SocketTimeoutException e) {
 			}
 

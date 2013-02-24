@@ -44,7 +44,7 @@ public class TrackersModel extends AbstractTableModel {
 		case 1:
 			return statusValue(info);
 		case 2:
-			return getIntervalValue(info);
+			return intervalValue(info);
 		case 3:
 			return info.getSeeders();
 		case 4:
@@ -67,10 +67,9 @@ public class TrackersModel extends AbstractTableModel {
 			return new String("OK");
 	}
 
-	private String getIntervalValue(TrackerInfo info) {
+	private String intervalValue(TrackerInfo info) {
 		long now = System.nanoTime();
-		long interval = now - info.getUpdatedAt();
-		int value = info.getInterval() - (int) (interval / 1e9);
-		return (value < 0 ? 0 : value) + " secs";
+		int interval = (int) ((now - info.getUpdatedAt()) / 1e9);
+		return TableFrame.displayDeltaTime(info.getInterval() - interval);
 	}
 }

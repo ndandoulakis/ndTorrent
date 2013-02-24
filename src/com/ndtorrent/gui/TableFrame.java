@@ -45,4 +45,10 @@ public class TableFrame extends JInternalFrame {
 		return table.getModel();
 	}
 
+	public static String displayDeltaTime(int delta_secs) {
+		// TODO move to a DeltaTimeRender
+		// TODO human readable String
+		return (delta_secs < 0 ? 0 : delta_secs) + " secs";
+	}
+
 }

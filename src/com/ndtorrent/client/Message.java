@@ -16,7 +16,7 @@ public class Message {
 
 	protected ByteBuffer data; // <ID><Payload>
 	protected long timestamp;
-	
+
 	protected volatile boolean is_prepared = true;
 
 	protected Message(ByteBuffer data) {
@@ -69,14 +69,14 @@ public class Message {
 		if (!isPiece() && !isBlockRequest() && !isCancel())
 			throw new UnsupportedOperationException(getType());
 
-		return isPiece() ? getPayloadLength() - 8 : data.getInt(9);
+		return isPiece() ? getPayloadLength() - 2 * 4 : data.getInt(9);
 	}
 
 	public boolean isPrepared() {
-		// Returns True by default. 
+		// Returns True by default.
 		return is_prepared;
 	}
-	
+
 	public void setPreparedStatus(boolean is_prepared) {
 		// Useful for asynchronous message preparation.
 		// For example, background threads may be filling the data.
@@ -158,13 +158,14 @@ public class Message {
 		data.putInt(length);
 		return new Message(data);
 	}
-	
+
 	public static Message newBlock(int index, int offset, int length) {
-		ByteBuffer data = ByteBuffer.allocate(1 + 3 * 4 + length);
+		// Buffer position will be in the proper place to put the binary data
+		// when the method returns.
+		ByteBuffer data = ByteBuffer.allocate(1 + 2 * 4 + length);
 		data.put(PIECE);
 		data.putInt(index);
 		data.putInt(offset);
-		data.putInt(length);
 		return new Message(data);
 	}
 

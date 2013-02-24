@@ -157,10 +157,10 @@ public final class Torrent {
 	}
 
 	public Message loadBlock(Message request) {
-		// The corresponding piece must be registered and NOT in partial state,
-		// otherwise the block will be discarded.
+		// The torrent must has the corresponding piece, otherwise the request
+		// will be discarded.
 		final int index = request.getPieceIndex();
-		if (unregistered.get(index) || partial.containsKey(index))
+		if (!bitfield.get(index))
 			return null;
 
 		final Message block = Message.newBlock(index, request.getBlockBegin(),

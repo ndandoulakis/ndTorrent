@@ -34,10 +34,10 @@ public final class HandshakeMsg {
 
 	public String getInfoHash() {
 		byte[] hash = new byte[20];
-		data.mark();
+		int old_pos = data.position();
 		data.position(1 + PROTOCOL.length() + 8);
 		data.get(hash, 0, 20);
-		data.reset();
+		data.position(old_pos);
 		try {
 			return new String(hash, "ISO-8859-1");
 		} catch (UnsupportedEncodingException e) {
@@ -48,10 +48,10 @@ public final class HandshakeMsg {
 
 	public String getID() {
 		byte[] peer_id = new byte[20];
-		data.mark();
+		int old_pos = data.position();
 		data.position(1 + PROTOCOL.length() + 8 + 20);
 		data.get(peer_id, 0, 20);
-		data.reset();
+		data.position(old_pos);
 		try {
 			return new String(peer_id, "ISO-8859-1");
 		} catch (UnsupportedEncodingException e) {

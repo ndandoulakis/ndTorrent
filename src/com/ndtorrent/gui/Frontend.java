@@ -101,7 +101,7 @@ public class Frontend implements StatusObserver {
 
 		client.setServerPort(Client.DEFAULT_PORT);
 
-		String info_hash = client.addTorrent("test_big.torrent");
+		String info_hash = client.addTorrent("test.torrent");
 		client.addStatusObserver(this, info_hash);
 
 	}

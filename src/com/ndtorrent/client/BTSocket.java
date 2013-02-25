@@ -26,7 +26,7 @@ public final class BTSocket {
 	private HandshakeMsg input_handshake = HandshakeMsg.newEmptyHandshake();
 	private HandshakeMsg output_handshake;
 
-	private boolean is_input_error; // unrecoverable
+	private boolean is_input_error; // unrecoverable, input stream has closed
 	private ByteBuffer input_data;
 	private ByteBuffer input_prefix = ByteBuffer.allocate(4);
 

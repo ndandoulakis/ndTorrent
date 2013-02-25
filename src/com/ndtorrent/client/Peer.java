@@ -209,7 +209,7 @@ public final class Peer extends Thread {
 	}
 
 	public boolean isSeeding() {
-		return false;
+		return true;
 	}
 
 	public boolean addIncomingConnection(BTSocket socket) {
@@ -378,6 +378,9 @@ public final class Peer extends Thread {
 	}
 
 	private void requestMoreBlocks() {
+		if (isSeeding())
+			return;
+
 		// Blocks of the same piece can be requested from different channels.
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.

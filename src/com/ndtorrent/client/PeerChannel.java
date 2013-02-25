@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 public final class PeerChannel {
-	private static final int MIN_REQUESTS = 10;
+	private static final int MIN_REQUESTS = 2;
 	private static final int MAX_REQUESTS = 255;
 
 	public BTSocket socket;

@@ -100,12 +100,10 @@ public final class Torrent {
 				: (int) (total_length % piece_length);
 
 		partial.put(index, new Piece(length));
-		// TODO synchronize bitfield
 		unregistered.flip(index);
 	}
 
 	public BitSet getUnregistered() {
-		// TODO synchronize bitfield
 		return (BitSet) unregistered.clone();
 	}
 
@@ -125,7 +123,6 @@ public final class Torrent {
 				@Override
 				public void run() {
 					if (piece.isValid() && savePiece(index, piece)) {
-						// TODO synchronize bitfield
 						bitfield.set(index, true);
 					} else {
 						// TODO reject
@@ -180,7 +177,7 @@ public final class Torrent {
 	}
 
 	private boolean readBlock(int index, Message block) {
-		// Data remaining length is expected to match block's length.
+		// Buffer's remaining length is expected to match block's length.
 		ByteBuffer data = block.getData();
 		long piece_offset = index * piece_length;
 		int start = Arrays.binarySearch(files, Long.valueOf(piece_offset));

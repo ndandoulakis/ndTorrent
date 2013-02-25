@@ -52,7 +52,8 @@ public final class MetaInfo {
 		Object meta_list = meta.get("announce-list");
 		if (meta_list != null)
 			for (Object o : (List<Object>) meta_list) {
-				list.add(Bdecoder.utf8EncodedString(o));
+				List<Object> s = (List<Object>) o;
+				list.add(Bdecoder.utf8EncodedString(s.get(0)));
 			}
 		return list;
 	}

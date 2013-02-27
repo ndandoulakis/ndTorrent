@@ -86,9 +86,9 @@ public final class PeerChannel {
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
-		// TODO the number of pipelined requests should adjust dynamically
-		// depending on the download speed.
-		return unfulfilled.size() < MAX_REQUESTS;
+		final int REQUESTS = 5; // TODO adjust dynamically
+		return unfulfilled.size() < Math.max(MIN_REQUESTS,
+				(Math.min(REQUESTS, MAX_REQUESTS)));
 	}
 
 	public void getRequested(BitSet requested, int piece_index, int block_length) {

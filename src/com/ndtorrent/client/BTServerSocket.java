@@ -24,6 +24,10 @@ public final class BTServerSocket extends Thread {
 		this.port = port;
 	}
 
+	public int getPort() {
+		return port;
+	}
+
 	public void addHandler(Peer peer) {
 		if (peer != null) {
 			handlers.add(peer);
@@ -33,7 +37,7 @@ public final class BTServerSocket extends Thread {
 	public void removeHandler(Peer peer) {
 		handlers.remove(peer);
 	}
-	
+
 	public void close() {
 		handlers.clear();
 		stop_requested = true;

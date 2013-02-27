@@ -10,7 +10,6 @@ public final class Client implements ClientInfo {
 	public static final int DEFAULT_PORT = 45000;
 
 	private String storage_location = "torrents";
-	private int port;
 	private String id = "BTCLIENTID1234567890";
 
 	private BTServerSocket server;
@@ -32,7 +31,7 @@ public final class Client implements ClientInfo {
 		String info_hash = meta.getInfoHash();
 		if (info_hash == null)
 			return null;
-		
+
 		if (peers.containsKey(info_hash))
 			return info_hash;
 
@@ -67,7 +66,7 @@ public final class Client implements ClientInfo {
 
 	@Override
 	public int getPort() {
-		return port;
+		return server == null ? 0 : server.getPort();
 	}
 
 	@Override

@@ -101,7 +101,7 @@ public final class UdpSession extends Session implements Runnable {
 			request_body.putInt(0); // IP
 			request_body.putInt(0); // key
 			request_body.putInt(-1); // num_want
-			request_body.putShort((short) client_info.getPort());
+			request_body.putShort((short) (client_info.getPort() & 0xFFFF));
 
 			// Run
 			thread = new Thread(this);

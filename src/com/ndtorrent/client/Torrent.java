@@ -32,10 +32,13 @@ public final class Torrent {
 	public Torrent(MetaInfo meta, String storage_location) {
 		sha1_list = meta.getPieces();
 		num_pieces = sha1_list.length / 20;
+
 		bitfield = new BitSet(num_pieces);
 		bitfield.set(0, num_pieces); // act as a seed
+
 		unregistered = new BitSet(num_pieces);
-		unregistered.set(0, num_pieces, true);
+		unregistered.set(0, num_pieces);
+		unregistered.andNot(bitfield);
 
 		parent_path = storage_location;
 		if (meta.areMultipleFiles()) {

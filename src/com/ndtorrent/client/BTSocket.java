@@ -40,7 +40,7 @@ public final class BTSocket {
 	private TransferRate output_rate = new TransferRate();
 	// ? use ByteBuffer limit to control the rate
 
-	private long piece_input_total;
+	private long blocks_input_total;
 
 	public BTSocket(SocketChannel channel) {
 		this.channel = channel;
@@ -156,7 +156,7 @@ public final class BTSocket {
 			input_rate.update(n);
 			if (input_data != null && input_data.position() > 0)
 				if (input_data.get(0) == Message.PIECE)
-					piece_input_total += n;
+					blocks_input_total += n;
 		}
 		return n;
 	}
@@ -249,12 +249,12 @@ public final class BTSocket {
 		return output_rate.perSec();
 	}
 
-	public long pieceInputTotal() {
-		return piece_input_total;
+	public long blocksInputTotal() {
+		return blocks_input_total;
 	}
 
-	public void clearPieceInputTotal() {
-		piece_input_total = 0;
+	public void clearBlocksInputTotal() {
+		blocks_input_total = 0;
 	}
 
 	public long createdAt() {

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -108,8 +109,11 @@ public final class Peer extends Thread {
 				processIncomingMessages();
 				advertisePieces();
 				updateAmInterestedState();
+
+				updateRollingTotals();
 				regularUnchoking();
 				optimisticUnchoking();
+
 				requestMoreBlocks();
 				// update input/output totals
 				keepConnectionsAlive();
@@ -354,20 +358,67 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void regularUnchoking() {
+	private void updateRollingTotals() {
 		long now = System.nanoTime();
-
-		// unchoke 1..3 regular peers
-		// LEECHER MODE
-		// regular if is_interested and fast upload rate
 		for (SelectionKey key : channel_selector.keys()) {
 			PeerChannel channel = (PeerChannel) key.attachment();
-			// For testing, choke only not interested peers
-			boolean choke = channel.isInterested() == false;
-			channel.updateIsChoked(choke);
+			channel.rollBlocksTotal(now);
+		}
+	}
+
+	private void regularUnchoking() {
+		if (isSeeding()) {
+			for (SelectionKey key : channel_selector.keys()) {
+				PeerChannel channel = (PeerChannel) key.attachment();
+				// For testing, choke only not interested peers
+				boolean choke = channel.isInterested() == false;
+				channel.updateIsChoked(choke);
+			}
+			return;
 		}
 
-		// System.out.println("regular unchoking");
+		// LEECHER MODE
+		// Order channels by the amount of block bytes received in
+		// the past 10 seconds.
+		List<PeerChannel> channels = new ArrayList<PeerChannel>();
+		for (SelectionKey key : channel_selector.keys()) {
+			channels.add((PeerChannel) key.attachment());
+		}
+		Collections.sort(channels, new Comparator<PeerChannel>() {
+			@Override
+			public int compare(PeerChannel c1, PeerChannel c2) {
+				// descending order, c2 > c1
+				return Long.signum(c2.getBlocksTotal() - c1.getBlocksTotal());
+			}
+		});
+
+		int optimistic = 0;
+		for (PeerChannel channel : channels) {
+			// TODO clear optimistic flag if expired
+			boolean is_optimistic = false;
+			if (is_optimistic)
+				optimistic++;
+		}
+
+		final int MAX_SLOTS = 3 + Math.min(optimistic, 1);
+		int regular = 0;
+		for (PeerChannel channel : channels) {
+			// Choke or not?
+			boolean is_optimistic = false;
+			if (is_optimistic) {
+				continue;
+			}
+			boolean am_choked = channel.amChoked();
+			boolean is_interested = channel.isInterested();
+			boolean snubbed = channel.getBlocksTotal() == 0;
+			boolean full_slots = (optimistic + regular) >= MAX_SLOTS;
+			if (full_slots || am_choked || !is_interested || snubbed) {
+				channel.updateIsChoked(true);
+				continue;
+			}
+			regular++;
+			channel.updateIsChoked(false);
+		}
 	}
 
 	private void optimisticUnchoking() {

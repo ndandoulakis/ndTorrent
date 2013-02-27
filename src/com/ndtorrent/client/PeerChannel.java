@@ -26,8 +26,7 @@ public final class PeerChannel {
 
 	// Reciprocation round
 	private long is_unchoked_at;
-	// RollingTotal piece
-	// TODO socket.clearPieceInputTotal()
+	private RollingTotal blocks_total = new RollingTotal();
 
 	private LinkedList<Message> incoming = new LinkedList<Message>();
 	private LinkedList<Message> outgoing = new LinkedList<Message>();
@@ -38,6 +37,16 @@ public final class PeerChannel {
 
 	// Requests the client has sent.
 	private LinkedList<Message> unfulfilled = new LinkedList<Message>();
+
+	public void rollBlocksTotal(long current_time) {
+		blocks_total.roll(current_time);
+		blocks_total.add(socket.blocksInputTotal());
+		socket.clearBlocksInputTotal();
+	}
+
+	public long getBlocksTotal() {
+		return blocks_total.getTotal();
+	}
 
 	public void processIncomingMessages() {
 		receiveIncoming();
@@ -124,6 +133,10 @@ public final class PeerChannel {
 
 	public boolean amChoked() {
 		return am_choked;
+	}
+
+	public boolean isChoked() {
+		return is_choked;
 	}
 
 	public boolean amInterested() {

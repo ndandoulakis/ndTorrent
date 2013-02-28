@@ -74,28 +74,35 @@ public final class HttpSession extends Session implements Runnable {
 		is_connection_error = false;
 		is_timeout = false;
 
+		// Prepare Request
+		String escaped_id = getUrlEncodedString(client_info.getID());
+		String escaped_hash = getUrlEncodedString(info_hash);
+
+		request = String
+				.format("?peer_id=%s&port=%d&info_hash=%s&event=%s&uploaded=%d&downloaded=%d&left=%d&no_peer_id=1&compact=1",
+						escaped_id, client_info.getPort(), escaped_hash, event,
+						uploaded, downloaded, left);
+
+		if (tracker_id != null) {
+			request += "&trackerid=" + getUrlEncodedString(tracker_id);
+		}
+
+		// Run
+		thread = new Thread(this);
+		thread.start();
+
+	}
+
+	private String getUrlEncodedString(String s) {
+		// URLEncoder converts space character " " into a plus sign "+".
+		// It seems that some trackers have problem with this encoding,
+		// therefore "+" is replace with "%20".
 		try {
-			// Prepare Request
-			String escaped_id = URLEncoder.encode(client_info.getID(),
-					"ISO-8859-1");
-			String escaped_hash = URLEncoder.encode(info_hash, "ISO-8859-1");
-			request = String
-					.format("?peer_id=%s&port=%d&info_hash=%s&event=%s&uploaded=%d&downloaded=%d&left=%d&no_peer_id=1&compact=1",
-							escaped_id, client_info.getPort(), escaped_hash,
-							event, uploaded, downloaded, left);
-			if (tracker_id != null) {
-				request += "&trackerid="
-						+ URLEncoder.encode(tracker_id, "ISO-8859-1");
-			}
-
-			// Run
-			thread = new Thread(this);
-			thread.start();
-
+			return URLEncoder.encode(s, "ISO-8859-1").replace("+", "%20");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
-
+		return null;
 	}
 
 	@Override
@@ -106,8 +113,6 @@ public final class HttpSession extends Session implements Runnable {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void run() {
-		System.out.println("http session running");
-
 		response = new TreeMap<String, Object>();
 
 		URLConnection connection = null;

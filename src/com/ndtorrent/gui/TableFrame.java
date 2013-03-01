@@ -48,7 +48,7 @@ public class TableFrame extends JInternalFrame {
 	public static String displayDeltaTime(int delta_secs) {
 		// TODO move to a DeltaTimeRender
 		// TODO human readable String
-		return (delta_secs < 0 ? 0 : delta_secs) + " secs";
+		return (delta_secs < 0 ? 0 : delta_secs) + "s";
 	}
 
 }

@@ -18,7 +18,7 @@ import javax.swing.SwingUtilities;
 import java.util.List;
 
 import javax.swing.BoxLayout;
-import javax.swing.JSeparator;
+import javax.swing.JSplitPane;
 
 public class Frontend implements StatusObserver {
 
@@ -29,9 +29,8 @@ public class Frontend implements StatusObserver {
 	private TableFrame piecesFrame;
 	private TableFrame connectionsFrame;
 	private BarRenderer torrentBar;
-	private JSeparator separator;
-	private JSeparator separator_1;
-	private JSeparator separator_2;
+	private JSplitPane splitPane_1;
+	private JSplitPane splitPane_2;
 
 	/**
 	 * Launch the application.
@@ -78,26 +77,25 @@ public class Frontend implements StatusObserver {
 		torrentBar = new BarRenderer();
 		frmNdtorrentAlpha.getContentPane().add(torrentBar);
 
-		separator = new JSeparator();
-		frmNdtorrentAlpha.getContentPane().add(separator);
+		splitPane_1 = new JSplitPane();
+		frmNdtorrentAlpha.getContentPane().add(splitPane_1);
+		splitPane_1.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
 		trackersFrame = new TableFrame("Trackers");
+		splitPane_1.setLeftComponent(trackersFrame);
 		trackersFrame.setTableModel(new TrackersModel());
-		frmNdtorrentAlpha.getContentPane().add(trackersFrame);
 
-		separator_1 = new JSeparator();
-		frmNdtorrentAlpha.getContentPane().add(separator_1);
+		splitPane_2 = new JSplitPane();
+		splitPane_2.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		splitPane_1.setRightComponent(splitPane_2);
 
 		piecesFrame = new TableFrame("Pieces");
+		splitPane_2.setLeftComponent(piecesFrame);
 		piecesFrame.setTableModel(new PiecesModel());
-		frmNdtorrentAlpha.getContentPane().add(piecesFrame);
-
-		separator_2 = new JSeparator();
-		frmNdtorrentAlpha.getContentPane().add(separator_2);
 
 		connectionsFrame = new TableFrame("Connections");
+		splitPane_2.setRightComponent(connectionsFrame);
 		connectionsFrame.setTableModel(new ConnectionsModel());
-		frmNdtorrentAlpha.getContentPane().add(connectionsFrame);
 
 		client.setServerPort(Client.DEFAULT_PORT);
 

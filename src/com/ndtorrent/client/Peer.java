@@ -56,9 +56,8 @@ public final class Peer extends Thread {
 			sessions.add(Session.create(url, client_info, meta.getInfoHash()));
 		}
 
-		sessions.add(Session.create(
-				"udp://tracker.openbittorrent.com:80/announce", client_info,
-				meta.getInfoHash()));
+		sessions.add(Session.create("udp://tracker.openbittorrent.com:80",
+				client_info, meta.getInfoHash()));
 	}
 
 	public void close() {
@@ -90,7 +89,7 @@ public final class Peer extends Thread {
 				socket_selector.selectNow();
 				// processConnectMessages();
 				processHandshakeMessages();
-				removeExpiredHandshakes();
+				removeBrokenSockets();
 
 				configureChannelKeys();
 				channel_selector.selectedKeys().clear();
@@ -101,7 +100,7 @@ public final class Peer extends Thread {
 				// messages before new additions, especially for non selected
 				// keys, and before connections are removed.
 				processOutgoingMessages();
-				removeBrokenPeerChannels();
+				removeBrokenChannels();
 				// removeFellowSeeders();
 				// restoreRejectedPieces();
 				restoreBrokenRequests();
@@ -187,10 +186,11 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void removeExpiredHandshakes() {
+	private void removeBrokenSockets() {
 		for (SelectionKey key : socket_selector.keys()) {
 			BTSocket socket = (BTSocket) key.attachment();
-			if (socket.isHandshakeExpired()) {
+			if (socket.isHandshakeExpired() || socket.isError()
+					|| !socket.isOpen()) {
 				key.cancel();
 				socket.close();
 			}
@@ -212,8 +212,8 @@ public final class Peer extends Thread {
 		}
 	}
 
-	public boolean isSeeding() {
-		return true;
+	public boolean isSeed() {
+		return torrent.getRemainingLength() == 0;
 	}
 
 	public boolean addIncomingConnection(BTSocket socket) {
@@ -273,7 +273,7 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void removeBrokenPeerChannels() {
+	private void removeBrokenChannels() {
 		// TODO remove when we're not seeding and:
 		// 1. X minutes passed since last time we're interested in them
 		// 2. we're choked for ~45 minutes
@@ -283,10 +283,8 @@ public final class Peer extends Thread {
 			long last_input = channel.socket.lastInputMessageAt();
 			long last_output = channel.socket.lastOutputMessageAt();
 			boolean expired = now - Math.max(last_input, last_output) > 135 * 1e9;
-			boolean input_error = channel.socket.isInputError();
-			boolean output_error = channel.socket.isOutputError();
-			if (input_error || output_error || expired
-					|| !channel.socket.isOpen()) {
+			boolean is_error = channel.socket.isError();
+			if (is_error || expired || !channel.socket.isOpen()) {
 				// Registered sockets that get closed will eventually be removed
 				// by the selector.
 				channel.socket.close();
@@ -367,7 +365,7 @@ public final class Peer extends Thread {
 	}
 
 	private void regularUnchoking() {
-		if (isSeeding()) {
+		if (isSeed()) {
 			for (SelectionKey key : channel_selector.keys()) {
 				PeerChannel channel = (PeerChannel) key.attachment();
 				// For testing, choke only not interested peers
@@ -394,7 +392,7 @@ public final class Peer extends Thread {
 
 		int optimistic = 0;
 		for (PeerChannel channel : channels) {
-			// TODO clear optimistic flag if expired
+			// TODO clear optimistic flag if expired or not interested
 			boolean is_optimistic = false;
 			if (is_optimistic)
 				optimistic++;
@@ -408,11 +406,10 @@ public final class Peer extends Thread {
 			if (is_optimistic) {
 				continue;
 			}
-			boolean am_choked = channel.amChoked();
 			boolean is_interested = channel.isInterested();
 			boolean snubbed = channel.getBlocksTotal() == 0;
 			boolean full_slots = (optimistic + regular) >= MAX_SLOTS;
-			if (full_slots || am_choked || !is_interested || snubbed) {
+			if (full_slots || !is_interested || snubbed) {
 				channel.updateIsChoked(true);
 				continue;
 			}
@@ -429,7 +426,7 @@ public final class Peer extends Thread {
 	}
 
 	private void requestMoreBlocks() {
-		if (isSeeding())
+		if (isSeed())
 			return;
 
 		// Blocks of the same piece can be requested from different channels.

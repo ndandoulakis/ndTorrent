@@ -58,7 +58,7 @@ public final class BTServerSocket extends Thread {
 		while (!stop_requested) {
 			try {
 				acceptIncoming();
-				removeExpiredHandshakes();
+				removeBrokenSockets();
 
 				selector.selectedKeys().clear();
 				selector.select(100);
@@ -94,10 +94,11 @@ public final class BTServerSocket extends Thread {
 		}
 	}
 
-	private void removeExpiredHandshakes() {
+	private void removeBrokenSockets() {
 		for (SelectionKey key : selector.keys()) {
 			BTSocket socket = (BTSocket) key.attachment();
-			if (socket.isHandshakeExpired()) {
+			if (socket.isHandshakeExpired() || socket.isError()
+					|| !socket.isOpen()) {
 				key.cancel();
 				socket.close();
 			}

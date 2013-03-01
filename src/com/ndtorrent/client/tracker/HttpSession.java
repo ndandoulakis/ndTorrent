@@ -96,7 +96,7 @@ public final class HttpSession extends Session implements Runnable {
 	private String getUrlEncodedString(String s) {
 		// URLEncoder converts space character " " into a plus sign "+".
 		// It seems that some trackers have problem with this encoding,
-		// therefore "+" is replace with "%20".
+		// therefore "+" is replaced with "%20".
 		try {
 			return URLEncoder.encode(s, "ISO-8859-1").replace("+", "%20");
 		} catch (UnsupportedEncodingException e) {

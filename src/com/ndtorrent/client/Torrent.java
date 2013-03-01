@@ -34,7 +34,7 @@ public final class Torrent {
 		num_pieces = sha1_list.length / 20;
 
 		bitfield = new BitSet(num_pieces);
-		bitfield.set(0, num_pieces); // act as a seed
+		// bitfield.set(0, num_pieces); // act as a seed
 
 		unregistered = new BitSet(num_pieces);
 		unregistered.set(0, num_pieces);

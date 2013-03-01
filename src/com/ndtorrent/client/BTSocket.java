@@ -303,6 +303,10 @@ public final class BTSocket {
 		}
 	}
 
+	public boolean isError() {
+		return is_input_error || is_output_error;
+	}
+
 	public boolean isInputError() {
 		return is_input_error;
 	}

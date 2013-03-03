@@ -101,7 +101,7 @@ public final class Peer extends Thread {
 				// keys, and before connections are removed.
 				processOutgoingMessages();
 				removeBrokenChannels();
-				// removeFellowSeeders();
+				removeFellowSeeders();
 				// restoreRejectedPieces();
 				restoreBrokenRequests();
 				spawnOutgoingConnections();
@@ -213,7 +213,7 @@ public final class Peer extends Thread {
 	}
 
 	public boolean isSeed() {
-		return torrent.getRemainingLength() == 0;
+		return torrent.numAvailablePieces() == torrent.numPieces();
 	}
 
 	public boolean addIncomingConnection(BTSocket socket) {
@@ -250,8 +250,8 @@ public final class Peer extends Thread {
 		channel.socket = socket;
 		channel.is_initiator = true; // local_port != torrent_port
 		channel.optimistic_candidate = true;
-		channel.advertiseBitfield(torrent.getCompletePieces(),
-				torrent.numOfPieces());
+		channel.advertiseBitfield(torrent.getAvailablePieces(),
+				torrent.numPieces());
 
 		try {
 			socket.register(channel_selector, SelectionKey.OP_READ, channel);
@@ -291,6 +291,17 @@ public final class Peer extends Thread {
 				System.out.printf("%s - REMOVED\n",
 						channel.socket.getInetAddress());
 			}
+		}
+	}
+
+	private void removeFellowSeeders() {
+		// if (!isSeed()) return;
+
+		BitSet available = torrent.getAvailablePieces();
+		for (SelectionKey key : channel_selector.keys()) {
+			PeerChannel channel = (PeerChannel) key.attachment();
+			if (channel.hasPieces(available))
+				channel.socket.close();
 		}
 	}
 
@@ -342,10 +353,10 @@ public final class Peer extends Thread {
 	}
 
 	private void advertisePieces() {
-		BitSet pieces = torrent.getCompletePieces();
+		BitSet available = torrent.getAvailablePieces();
 		for (SelectionKey key : channel_selector.keys()) {
 			PeerChannel channel = (PeerChannel) key.attachment();
-			channel.advertise(pieces);
+			channel.advertise(available);
 		}
 	}
 

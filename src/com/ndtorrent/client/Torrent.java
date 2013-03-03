@@ -82,8 +82,12 @@ public final class Torrent {
 		return total_length;
 	}
 
-	public int numOfPieces() {
+	public int numPieces() {
 		return num_pieces;
+	}
+
+	public int numAvailablePieces() {
+		return bitfield.cardinality();
 	}
 
 	public BitSet getCompletePieces() {

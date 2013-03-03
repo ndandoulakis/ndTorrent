@@ -38,6 +38,10 @@ public final class PeerChannel {
 	// Requests the client has sent.
 	private LinkedList<Message> unfulfilled = new LinkedList<Message>();
 
+	public int numAvailablePieces() {
+		return bitfield.cardinality();
+	}
+
 	public void rollBlocksTotal(long current_time) {
 		blocks_total.roll(current_time);
 		blocks_total.add(socket.blocksInputTotal());

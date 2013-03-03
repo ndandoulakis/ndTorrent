@@ -9,7 +9,7 @@ public final class Piece {
 	private int tail_length;
 
 	private ByteBuffer data;
-	private BitSet written;
+	private BitSet available;
 	private BitSet notrequested;
 	private long modified_at;
 
@@ -22,7 +22,7 @@ public final class Piece {
 		this.block_length = block_length;
 
 		num_blocks = (piece_length + block_length - 1) / block_length;
-		written = new BitSet(num_blocks);
+		available = new BitSet(num_blocks);
 		notrequested = new BitSet(num_blocks);
 		notrequested.set(0, num_blocks, true);
 
@@ -37,13 +37,13 @@ public final class Piece {
 	}
 
 	public boolean isComplete() {
-		return numWrittenBlocks() == num_blocks;
+		return numAvailableBlocks() == num_blocks;
 	}
 
 	public void restoreRequested(BitSet requested) {
 		notrequested.set(0, num_blocks, true);
 		notrequested.andNot(requested);
-		notrequested.andNot(written);
+		notrequested.andNot(available);
 	}
 
 	public BitSet getNotRequested() {
@@ -79,7 +79,7 @@ public final class Piece {
 			return true;
 		return false;
 	}
-	
+
 	public long modifiedAt() {
 		return modified_at;
 	}
@@ -92,16 +92,16 @@ public final class Piece {
 
 		data.position(offset);
 		data.put(block.getData().array(), 1 + 2 * 4, length);
-		written.set(getBlockIndex(offset), true);
+		available.set(getBlockIndex(offset), true);
 		modified_at = System.nanoTime();
 	}
-	
+
 	public int numBlocks() {
 		return num_blocks;
 	}
 
-	public int numWrittenBlocks() {
-		return written.cardinality();
+	public int numAvailableBlocks() {
+		return available.cardinality();
 	}
 
 }

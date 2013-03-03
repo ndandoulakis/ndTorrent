@@ -6,14 +6,14 @@ public final class PieceInfo {
 
 	private final int index;
 	private final int num_blocks;
-	private final int num_written;
+	private final int num_available;
 
 	public PieceInfo(int index, Piece piece) {
 		this.index = index;
 		num_blocks = piece.numBlocks();
-		num_written = piece.numWrittenBlocks();
+		num_available = piece.numAvailableBlocks();
 	}
-	
+
 	public int getIndex() {
 		return index;
 	}
@@ -22,8 +22,8 @@ public final class PieceInfo {
 		return num_blocks;
 	}
 
-	public int numWrittenBlocks() {
-		return num_written;
+	public int numAvailableBlocks() {
+		return num_available;
 	}
 
 }

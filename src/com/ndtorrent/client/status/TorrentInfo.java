@@ -14,7 +14,7 @@ public final class TorrentInfo {
 
 	public TorrentInfo(Torrent torrent) {
 		bitfield = torrent.getCompletePieces();
-		num_pieces = torrent.numOfPieces();
+		num_pieces = torrent.numPieces();
 	}
 	
 	public BitSet getBitfield() {

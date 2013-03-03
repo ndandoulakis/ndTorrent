@@ -41,7 +41,8 @@ public final class PiecesModel extends AbstractTableModel {
 		case 0:
 			return info.getIndex();
 		case 1:
-			return String.format("%d/%d", info.numWrittenBlocks(), info.numBlocks());
+			return String.format("%d/%d", info.numAvailableBlocks(),
+					info.numBlocks());
 		default:
 			return null;
 		}

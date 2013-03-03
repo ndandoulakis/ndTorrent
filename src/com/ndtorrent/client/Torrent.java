@@ -18,7 +18,7 @@ public final class Torrent {
 	private BTFile[] files;
 
 	private int num_pieces;
-	private BitSet bitfield;
+	private BitSet available;
 	private BitSet unregistered;
 	// private BitSet rejected
 	// private BitSet skip // pieces contained fully in skipped files
@@ -33,12 +33,12 @@ public final class Torrent {
 		sha1_list = meta.getPieces();
 		num_pieces = sha1_list.length / 20;
 
-		bitfield = new BitSet(num_pieces);
+		available = new BitSet(num_pieces);
 		// bitfield.set(0, num_pieces); // act as a seed
 
 		unregistered = new BitSet(num_pieces);
 		unregistered.set(0, num_pieces);
-		unregistered.andNot(bitfield);
+		unregistered.andNot(available);
 
 		parent_path = storage_location;
 		if (meta.areMultipleFiles()) {
@@ -87,11 +87,11 @@ public final class Torrent {
 	}
 
 	public int numAvailablePieces() {
-		return bitfield.cardinality();
+		return available.cardinality();
 	}
 
-	public BitSet getCompletePieces() {
-		return (BitSet) bitfield.clone();
+	public BitSet getAvailablePieces() {
+		return (BitSet) available.clone();
 	}
 
 	public Set<Entry<Integer, Piece>> getPartialPieces() {
@@ -131,7 +131,7 @@ public final class Torrent {
 				@Override
 				public void run() {
 					if (piece.isValid() && savePiece(index, piece)) {
-						bitfield.set(index, true);
+						available.set(index, true);
 					} else {
 						// TODO reject
 					}
@@ -165,7 +165,7 @@ public final class Torrent {
 		// The torrent must has the corresponding piece, otherwise the request
 		// will be discarded.
 		final int index = request.getPieceIndex();
-		if (!bitfield.get(index))
+		if (!available.get(index))
 			return null;
 
 		final Message block = Message.newBlock(index, request.getBlockBegin(),

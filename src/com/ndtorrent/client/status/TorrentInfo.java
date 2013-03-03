@@ -9,19 +9,19 @@ import com.ndtorrent.client.Torrent;
 
 public final class TorrentInfo {
 
-	private final BitSet bitfield;
+	private final BitSet available;
 	private final int num_pieces;
 
 	public TorrentInfo(Torrent torrent) {
-		bitfield = torrent.getCompletePieces();
+		available = torrent.getAvailablePieces();
 		num_pieces = torrent.numPieces();
 	}
-	
-	public BitSet getBitfield() {
-		return bitfield;
+
+	public BitSet getAvailablePieces() {
+		return available;
 	}
-	
-	public int numOfPieces() {
+
+	public int numPieces() {
 		return num_pieces;
 	}
 

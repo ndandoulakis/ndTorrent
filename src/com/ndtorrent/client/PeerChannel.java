@@ -10,7 +10,7 @@ public final class PeerChannel {
 
 	public BTSocket socket;
 
-	private BitSet bitfield = new BitSet();
+	private BitSet available = new BitSet();
 	private BitSet have_advertised = new BitSet();
 	private BitSet participated = new BitSet();
 
@@ -39,7 +39,7 @@ public final class PeerChannel {
 	private LinkedList<Message> unfulfilled = new LinkedList<Message>();
 
 	public int numAvailablePieces() {
-		return bitfield.cardinality();
+		return available.cardinality();
 	}
 
 	public void rollBlocksTotal(long current_time) {
@@ -84,7 +84,7 @@ public final class PeerChannel {
 	}
 
 	public boolean hasPiece(int index) {
-		return bitfield.get(index);
+		return available.get(index);
 	}
 
 	public boolean canRequestMore() {
@@ -165,7 +165,7 @@ public final class PeerChannel {
 	}
 
 	public void updateAmInterested() {
-		BitSet missing = (BitSet) bitfield.clone();
+		BitSet missing = (BitSet) available.clone();
 		missing.andNot(have_advertised);
 		boolean be_interested = missing.nextSetBit(0) >= 0;
 		if (am_interested == be_interested)
@@ -300,12 +300,12 @@ public final class PeerChannel {
 	}
 
 	private void onHave(Message m) {
-		bitfield.set(m.getPieceIndex());
+		available.set(m.getPieceIndex());
 	}
 
 	private void onBitfield(Message m) {
 		// TODO if not isValidBitfield close the socket
-		bitfield = m.toBitSet();
+		available = m.toBitSet();
 	}
 
 	private void onRequest(Message m) {

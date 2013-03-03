@@ -146,7 +146,8 @@ public class Frontend implements StatusObserver {
 			@Override
 			public void run() {
 				// ? check info_hash
-				torrentBar.setBits(torrent.getBitfield(), torrent.numOfPieces());
+				torrentBar.setBits(torrent.getAvailablePieces(),
+						torrent.numPieces());
 			}
 		});
 	}

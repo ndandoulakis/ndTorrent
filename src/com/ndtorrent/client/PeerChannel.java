@@ -25,7 +25,7 @@ public final class PeerChannel {
 	private boolean is_interested;
 
 	// Reciprocation round
-	private long is_unchoked_at;
+	private long unchoke_end_time;
 	private RollingTotal blocks_total = new RollingTotal();
 
 	private LinkedList<Message> incoming = new LinkedList<Message>();
@@ -157,6 +157,14 @@ public final class PeerChannel {
 		return is_interested;
 	}
 
+	public void setUnchokeEndTime(long at) {
+		unchoke_end_time = at;
+	}
+
+	public long getUnchokeEndTime() {
+		return unchoke_end_time;
+	}
+
 	public void updateIsChoked(boolean choke) {
 		if (is_choked == choke)
 			return;
@@ -165,7 +173,6 @@ public final class PeerChannel {
 			outgoing.add(Message.newChoke());
 			removeOutgoingPieces();
 		} else {
-			is_unchoked_at = System.nanoTime();
 			outgoing.add(Message.newUnchoke());
 		}
 	}

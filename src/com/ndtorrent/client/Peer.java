@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -158,6 +157,14 @@ public final class Peer extends Thread {
 
 			session.update(event, 0, 0, torrent.getRemainingLength());
 		}
+	}
+
+	ArrayList<PeerChannel> getChannels() {
+		ArrayList<PeerChannel> channels = new ArrayList<PeerChannel>();
+		for (SelectionKey key : channel_selector.keys()) {
+			channels.add((PeerChannel) key.attachment());
+		}
+		return channels;
 	}
 
 	private void processHandshakeMessages() {
@@ -386,47 +393,7 @@ public final class Peer extends Thread {
 			return;
 		}
 
-		// LEECHER MODE
-		// Order channels by the amount of block bytes received in
-		// the past 10 seconds.
-		List<PeerChannel> channels = new ArrayList<PeerChannel>();
-		for (SelectionKey key : channel_selector.keys()) {
-			channels.add((PeerChannel) key.attachment());
-		}
-		Collections.sort(channels, new Comparator<PeerChannel>() {
-			@Override
-			public int compare(PeerChannel c1, PeerChannel c2) {
-				// descending order, c2 > c1
-				return Long.signum(c2.getBlocksTotal() - c1.getBlocksTotal());
-			}
-		});
-
-		int optimistic = 0;
-		for (PeerChannel channel : channels) {
-			// TODO clear optimistic flag if expired or not interested
-			boolean is_optimistic = false;
-			if (is_optimistic)
-				optimistic++;
-		}
-
-		final int MAX_SLOTS = 3 + Math.min(optimistic, 1);
-		int regular = 0;
-		for (PeerChannel channel : channels) {
-			// Choke or not?
-			boolean is_optimistic = false;
-			if (is_optimistic) {
-				continue;
-			}
-			boolean is_interested = channel.isInterested();
-			boolean snubbed = channel.getBlocksTotal() == 0;
-			boolean full_slots = (optimistic + regular) >= MAX_SLOTS;
-			if (full_slots || !is_interested || snubbed) {
-				channel.updateIsChoked(true);
-				continue;
-			}
-			regular++;
-			channel.updateIsChoked(false);
-		}
+		RegularUnchoking.unchoke(getChannels());
 	}
 
 	private void optimisticUnchoking() {

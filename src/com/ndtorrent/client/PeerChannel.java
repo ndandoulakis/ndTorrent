@@ -14,6 +14,7 @@ public final class PeerChannel {
 	private BitSet have_advertised = new BitSet();
 	private BitSet participated = new BitSet();
 
+	private boolean am_snubbed;
 	public boolean optimistic_candidate;
 	public boolean is_initiator;
 	public boolean is_banned;
@@ -139,6 +140,11 @@ public final class PeerChannel {
 			outgoing.add(Message.newHavePiece(i));
 		}
 		have_advertised.or(pieces);
+	}
+
+	public boolean amSnubbed() {
+		// If true, it'll clear only as an optimistic unchoke.
+		return am_snubbed;
 	}
 
 	public boolean amChoked() {

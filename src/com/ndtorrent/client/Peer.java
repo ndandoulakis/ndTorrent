@@ -107,11 +107,7 @@ public final class Peer extends Thread {
 				processIncomingMessages();
 				advertisePieces();
 				updateAmInterestedState();
-
-				updateRollingTotals();
-				regularUnchoking();
-				optimisticUnchoking();
-
+				unchoking();
 				requestMoreBlocks();
 				// update input/output totals
 				keepConnectionsAlive();
@@ -374,15 +370,7 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void updateRollingTotals() {
-		long now = System.nanoTime();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
-			channel.rollBlocksTotal(now);
-		}
-	}
-
-	private void regularUnchoking() {
+	private void unchoking() {
 		if (isSeed()) {
 			for (SelectionKey key : channel_selector.keys()) {
 				PeerChannel channel = (PeerChannel) key.attachment();
@@ -394,13 +382,6 @@ public final class Peer extends Thread {
 		}
 
 		RegularUnchoking.unchoke(getChannels());
-	}
-
-	private void optimisticUnchoking() {
-		// optimistic if is_interested (random)
-		// unchoke 1..4 optimistic peers
-		// LEECHER MODE
-		// replace worst regular with optimistic
 	}
 
 	private void requestMoreBlocks() {

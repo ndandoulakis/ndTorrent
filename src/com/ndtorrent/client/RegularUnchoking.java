@@ -10,12 +10,33 @@ public final class RegularUnchoking {
 
 	public static void unchoke(ArrayList<PeerChannel> channels) {
 		// Note that the array might be modified.
+		updateRollingTotals(channels);
+		unchokeOptimistics(channels);
+		unchokeRegular(channels);
+		// TODO ANTI-SNUBBING
+	}
 
+	private static void updateRollingTotals(List<PeerChannel> channels) {
+		long now = System.nanoTime();
+		for (PeerChannel channel : channels) {
+			channel.rollBlocksTotal(now);
+		}
+	}
+
+	private static void unchokeOptimistics(List<PeerChannel> channels) {
+		// clear if expired
+		// if no free slots, return
+		// if none optimistic candidate, clear optimistic flags
+		// select choked & interested & optimistic
+		// shuffle
+		// unchoke 1..4 channels
+		// flag optimistic candidates; clear snubbed flag
+	}
+
+	private static void unchokeRegular(List<PeerChannel> channels) {
 		int optimistic = 0; // removeOptimistic(channels);
 		int regular = removeRegular(channels);
 		sortByBlocksTotal(channels);
-		
-		// TODO ANTI-SNUBBING
 
 		final int MAX_SLOTS = 3 + Math.min(optimistic, 1);
 		long now = System.nanoTime();
@@ -30,6 +51,7 @@ public final class RegularUnchoking {
 			channel.updateIsChoked(false);
 			channel.setUnchokeEndTime((long) (now + 10 * 1e9));
 		}
+
 	}
 
 	private static int removeRegular(List<PeerChannel> channels) {

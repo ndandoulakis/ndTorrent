@@ -234,8 +234,10 @@ public final class Peer extends Thread {
 	}
 
 	private void addReadyConnection(BTSocket socket) {
-		if (channel_selector.keys().size() >= MAX_PEERS)
+		if (channel_selector.keys().size() >= MAX_PEERS) {
+			socket.close();
 			return;
+		}
 
 		// Multiple connections with same IP are not allowed.
 		String ip = socket.getRemoteIP();
@@ -252,7 +254,6 @@ public final class Peer extends Thread {
 		PeerChannel channel = new PeerChannel();
 		channel.socket = socket;
 		channel.is_initiator = true; // local_port != torrent_port
-		channel.optimistic_candidate = true;
 		channel.advertiseBitfield(torrent.getAvailablePieces(),
 				torrent.numPieces());
 
@@ -381,7 +382,7 @@ public final class Peer extends Thread {
 			return;
 		}
 
-		RegularUnchoking.unchoke(getChannels());
+		RegularUnchoking.update(getChannels());
 	}
 
 	private void requestMoreBlocks() {

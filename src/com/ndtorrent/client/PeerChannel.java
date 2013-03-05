@@ -14,11 +14,13 @@ public final class PeerChannel {
 	private BitSet have_advertised = new BitSet();
 	private BitSet participated = new BitSet();
 
-	private boolean am_snubbed;
-	public boolean optimistic_candidate;
 	public boolean is_initiator;
 	public boolean is_banned;
 	public boolean is_questionable; // participated in rejected pieces
+
+	private boolean am_snubbed;
+	private boolean is_optimistic;
+	private boolean optimistic_candidate = true;
 
 	private boolean am_choked = true;
 	private boolean is_choked = true;
@@ -145,6 +147,10 @@ public final class PeerChannel {
 	public boolean amSnubbed() {
 		// If true, it'll clear only as an optimistic unchoke.
 		return am_snubbed;
+	}
+
+	public boolean isOptimisticCandidate() {
+		return optimistic_candidate;
 	}
 
 	public boolean amChoked() {

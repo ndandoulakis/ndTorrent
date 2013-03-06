@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-public final class RegularUnchoking {
+public final class Choking {
 
 	public static void update(ArrayList<PeerChannel> channels) {
 		updateRollingTotals(channels);

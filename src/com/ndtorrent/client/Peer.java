@@ -384,7 +384,7 @@ public final class Peer extends Thread {
 			return;
 		}
 
-		RegularUnchoking.update(getChannels());
+		Choking.update(getChannels());
 	}
 
 	private void requestMoreBlocks() {

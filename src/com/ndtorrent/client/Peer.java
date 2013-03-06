@@ -299,7 +299,8 @@ public final class Peer extends Thread {
 	}
 
 	private void removeFellowSeeders() {
-		// if (!isSeed()) return;
+		if (!isSeed())
+			return;
 
 		BitSet available = torrent.getAvailablePieces();
 		for (SelectionKey key : channel_selector.keys()) {

@@ -20,7 +20,7 @@ public final class PeerChannel {
 
 	private boolean am_snubbed;
 	private boolean is_optimistic;
-	private boolean optimistic_candidate = true;
+	private boolean former_optimistic;
 
 	private boolean am_choked = true;
 	private boolean is_choked = true;
@@ -144,17 +144,29 @@ public final class PeerChannel {
 		have_advertised.or(pieces);
 	}
 
+	public void setAmSnubbed(boolean snubbed) {
+		am_snubbed = snubbed;
+	}
+
 	public boolean amSnubbed() {
 		// If true, it'll clear only as an optimistic unchoke.
 		return am_snubbed;
+	}
+
+	public void setIsOptimistic(boolean optimistic) {
+		is_optimistic = optimistic;
 	}
 
 	public boolean isOptimistic() {
 		return is_optimistic;
 	}
 
-	public boolean isOptimisticCandidate() {
-		return optimistic_candidate;
+	public void setFormerOptimistic(boolean former) {
+		former_optimistic = former;
+	}
+
+	public boolean isFormerOptimistic() {
+		return former_optimistic;
 	}
 
 	public boolean amChoked() {

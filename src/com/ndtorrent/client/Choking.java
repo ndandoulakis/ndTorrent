@@ -37,6 +37,10 @@ public final class Choking {
 		long now = System.nanoTime();
 		int slots = 0;
 		for (PeerChannel channel : candidates) {
+			if (channel.isOptimistic()) {
+				// Channel is optimistic but not current (expired).
+				continue;
+			}
 			boolean full_slots = (optimistic + regular + slots) >= MAX_SLOTS;
 			boolean interested = channel.isInterested();
 			boolean former_optimistic = channel.isFormerOptimistic();

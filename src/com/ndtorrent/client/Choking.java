@@ -8,21 +8,27 @@ import java.util.List;
 
 public final class Choking {
 
-	public static void update(List<PeerChannel> channels) {
-		updateRollingTotals(channels);
-		updateRegular(channels);
-		updateOptimistic(channels);
+	public static void updateAsLeech(List<PeerChannel> channels) {
+		rollBlocksTotal(channels);
+		regularLeechUpdate(channels);
+		optimisticUpdate(channels);
 		// TODO ANTI-SNUBBING
 	}
 
-	private static void updateRollingTotals(List<PeerChannel> channels) {
+	public static void updateAsSeed(List<PeerChannel> channels) {
+		// As a seed, rolling totals and ANTI-SNUBBING aren't needed.
+		regularSeedUpdate(channels);
+		// optimisticUpdate(channels);
+	}
+
+	private static void rollBlocksTotal(List<PeerChannel> channels) {
 		long now = System.nanoTime();
 		for (PeerChannel channel : channels) {
 			channel.rollBlocksTotal(now);
 		}
 	}
 
-	private static void updateRegular(List<PeerChannel> channels) {
+	private static void regularLeechUpdate(List<PeerChannel> channels) {
 		List<PeerChannel> candidates = new ArrayList<PeerChannel>(channels);
 
 		int optimistic = removeCurrentOptimistic(candidates);
@@ -55,7 +61,15 @@ public final class Choking {
 
 	}
 
-	private static void updateOptimistic(List<PeerChannel> channels) {
+	private static void regularSeedUpdate(List<PeerChannel> channels) {
+		// For testing, choke only not interested peers.
+		for (PeerChannel channel : channels) {
+			boolean choke = channel.isInterested() == false;
+			channel.updateIsChoked(choke);
+		}
+	}
+
+	private static void optimisticUpdate(List<PeerChannel> channels) {
 		List<PeerChannel> candidates = new ArrayList<PeerChannel>(channels);
 
 		int optimistic = removeCurrentOptimistic(candidates);

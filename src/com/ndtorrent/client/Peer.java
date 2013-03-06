@@ -375,17 +375,10 @@ public final class Peer extends Thread {
 	private void choking() {
 		// TODO update once per second
 
-		if (isSeed()) {
-			for (SelectionKey key : channel_selector.keys()) {
-				PeerChannel channel = (PeerChannel) key.attachment();
-				// For testing, choke only not interested peers
-				boolean choke = channel.isInterested() == false;
-				channel.updateIsChoked(choke);
-			}
-			return;
-		}
-
-		Choking.update(getChannels());
+		if (isSeed())
+			Choking.updateAsSeed(getChannels());
+		else
+			Choking.updateAsLeech(getChannels());
 	}
 
 	private void requestMoreBlocks() {

@@ -149,6 +149,10 @@ public final class PeerChannel {
 		return am_snubbed;
 	}
 
+	public boolean isOptimistic() {
+		return is_optimistic;
+	}
+
 	public boolean isOptimisticCandidate() {
 		return optimistic_candidate;
 	}

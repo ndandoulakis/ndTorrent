@@ -107,7 +107,7 @@ public final class Peer extends Thread {
 				processIncomingMessages();
 				advertisePieces();
 				updateAmInterestedState();
-				unchoking();
+				choking();
 				requestMoreBlocks();
 				// update input/output totals
 				keepConnectionsAlive();
@@ -371,7 +371,9 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void unchoking() {
+	private void choking() {
+		// TODO update once per second
+
 		if (isSeed()) {
 			for (SelectionKey key : channel_selector.keys()) {
 				PeerChannel channel = (PeerChannel) key.attachment();

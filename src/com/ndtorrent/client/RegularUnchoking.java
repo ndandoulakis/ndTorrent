@@ -8,11 +8,10 @@ import java.util.List;
 
 public final class RegularUnchoking {
 
-	public static void unchoke(ArrayList<PeerChannel> channels) {
-		// Note that the array might be modified.
+	public static void update(ArrayList<PeerChannel> channels) {
 		updateRollingTotals(channels);
-		unchokeOptimistics(channels);
-		unchokeRegular(channels);
+		updateOptimistic(channels);
+		updateRegular(channels);
 		// TODO ANTI-SNUBBING
 	}
 
@@ -23,25 +22,26 @@ public final class RegularUnchoking {
 		}
 	}
 
-	private static void unchokeOptimistics(List<PeerChannel> channels) {
-		// clear if expired
-		// if no free slots, return
-		// if none optimistic candidate, clear optimistic flags
-		// select choked & interested & optimistic
+	private static void updateOptimistic(List<PeerChannel> channels) {
+		// set candidate=false if expired
+		// select choked && interested && candidate
+		// if no candidates, set all candidate=true
 		// shuffle
 		// unchoke 1..4 channels
-		// flag optimistic candidates; clear snubbed flag
+		// flag optimistic candidates and clear snubbed flag
 	}
 
-	private static void unchokeRegular(List<PeerChannel> channels) {
-		int optimistic = 0; // removeOptimistic(channels);
-		int regular = removeRegular(channels);
-		sortByBlocksTotal(channels);
+	private static void updateRegular(List<PeerChannel> channels) {
+		List<PeerChannel> candidates = new ArrayList<PeerChannel>(channels);
+
+		int optimistic = removeCurrentOptimistic(candidates);
+		int regular = removeCurrentRegular(candidates);
+		sortByBlocksTotal(candidates);
 
 		final int MAX_SLOTS = 3 + Math.min(optimistic, 1);
 		long now = System.nanoTime();
 		int slots = 0;
-		for (PeerChannel channel : channels) {
+		for (PeerChannel channel : candidates) {
 			boolean full_slots = (optimistic + regular + slots) >= MAX_SLOTS;
 			if (full_slots || !channel.isInterested()) {
 				channel.updateIsChoked(true);
@@ -54,13 +54,13 @@ public final class RegularUnchoking {
 
 	}
 
-	private static int removeRegular(List<PeerChannel> channels) {
+	private static int removeCurrentOptimistic(List<PeerChannel> channels) {
 		// Returns the number of channels removed.
 		Iterator<PeerChannel> it = channels.iterator();
 		int count = 0;
 		while (it.hasNext()) {
 			PeerChannel channel = it.next();
-			if (isRegular(channel)) {
+			if (isCurrentOptimistic(channel)) {
 				it.remove();
 				count++;
 			}
@@ -68,13 +68,41 @@ public final class RegularUnchoking {
 		return count;
 	}
 
-	private static boolean isRegular(PeerChannel channel) {
+	private static int removeCurrentRegular(List<PeerChannel> channels) {
+		// Returns the number of channels removed.
+		Iterator<PeerChannel> it = channels.iterator();
+		int count = 0;
+		while (it.hasNext()) {
+			PeerChannel channel = it.next();
+			if (isCurrentRegular(channel)) {
+				it.remove();
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private static boolean isCurrentOptimistic(PeerChannel channel) {
+		return isCurrent(channel) && channel.isOptimistic();
+	}
+
+	private static boolean isCurrentRegular(PeerChannel channel) {
+		// A channel can become regular if it has been optimistic
+		// unchoked at least once.
+		boolean current = isCurrent(channel);
+		boolean snubbed = channel.amSnubbed();
+		boolean optimistic = channel.isOptimistic()
+				|| channel.isOptimisticCandidate();
+		return current && !optimistic && !snubbed;
+	}
+
+	private static boolean isCurrent(PeerChannel channel) {
 		long now = System.nanoTime();
 		boolean choked = channel.isChoked();
 		boolean interested = channel.isInterested();
-		boolean snubbed = channel.amSnubbed();
 		boolean expired = now > channel.getUnchokeEndTime();
-		return !choked && interested && !snubbed && !expired;
+		return !choked && interested && !expired;
+
 	}
 
 	private static void sortByBlocksTotal(List<PeerChannel> channels) {

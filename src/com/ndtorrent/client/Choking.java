@@ -60,16 +60,6 @@ public final class Choking {
 		if (optimistic + regular >= 4)
 			return;
 
-		removeFormerOptimistic(candidates);
-
-		if (candidates.isEmpty()) {
-			for (PeerChannel channel : channels) {
-				if (channel.isChoked())
-					channel.setFormerOptimistic(false);
-			}
-			return;
-		}
-
 		for (PeerChannel channel : candidates) {
 			if (channel.isOptimistic()) {
 				// Channel is optimistic but not current (expired).
@@ -78,6 +68,16 @@ public final class Choking {
 				channel.setIsOptimistic(false);
 				channel.setFormerOptimistic(true);
 			}
+		}
+
+		removeFormerOptimistic(candidates);
+
+		if (candidates.isEmpty()) {
+			for (PeerChannel channel : channels) {
+				if (channel.isChoked())
+					channel.setFormerOptimistic(false);
+			}
+			return;
 		}
 
 		// Optimistic takes a single slot a time, if any.

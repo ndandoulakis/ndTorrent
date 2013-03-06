@@ -134,19 +134,15 @@ public final class Message {
 
 	public static Message newBitfield(BitSet set, int nbits) {
 		byte[] array = new byte[(nbits + 7) / 8 + 1];
-
-		byte b = BITFIELD;
-		array[0] = b;
-
-		int bit = 7;
-		int min_size = Math.min(nbits, set.length());
-		for (int ofs = 0; ofs < min_size; ofs++) {
-			bit = ofs % 8;
+		byte b = 0;
+		for (int ofs = 0; ofs < nbits; ofs++) {
 			b <<= 1;
 			b |= set.get(ofs) ? 1 : 0;
 			array[1 + ofs / 8] = b;
 		}
-		array[array.length - 1] = (byte) (b << (7 - bit)); // remaining bits
+		int spare_bits = 7 - (nbits + 7) % 8;
+		array[array.length - 1] = (byte) (b << spare_bits);
+		array[0] = BITFIELD;
 		return new Message(ByteBuffer.wrap(array));
 	}
 

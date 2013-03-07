@@ -4,15 +4,15 @@ import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 public final class Message {
-	protected static final byte CHOKE = 0;
-	protected static final byte UNCHOKE = 1;
-	protected static final byte INTERESTED = 2;
-	protected static final byte NOT_INTERESTED = 3;
-	protected static final byte HAVE = 4;
-	protected static final byte BITFIELD = 5;
-	protected static final byte REQUEST = 6;
-	protected static final byte PIECE = 7;
-	protected static final byte CANCEL = 8;
+	static final byte CHOKE = 0;
+	static final byte UNCHOKE = 1;
+	static final byte INTERESTED = 2;
+	static final byte NOT_INTERESTED = 3;
+	static final byte HAVE = 4;
+	static final byte BITFIELD = 5;
+	static final byte REQUEST = 6;
+	static final byte PIECE = 7;
+	static final byte CANCEL = 8;
 
 	private ByteBuffer data; // <ID><Payload>
 	private long timestamp;

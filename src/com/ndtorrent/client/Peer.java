@@ -155,7 +155,7 @@ public final class Peer extends Thread {
 		}
 	}
 
-	List<PeerChannel> getChannels() {
+	private List<PeerChannel> getChannels() {
 		List<PeerChannel> channels = new ArrayList<PeerChannel>();
 		for (SelectionKey key : channel_selector.keys()) {
 			channels.add((PeerChannel) key.attachment());

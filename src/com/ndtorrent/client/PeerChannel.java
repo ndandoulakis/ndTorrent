@@ -71,6 +71,8 @@ public final class PeerChannel {
 	}
 
 	public boolean hasOutgoingMessages() {
+		// TODO later I'll use a separate queue for the blocks,
+		// and I'll have to check for prepared blocks.
 		return !outgoing.isEmpty() || socket.hasOutputMessage();
 	}
 

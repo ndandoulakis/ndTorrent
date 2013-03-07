@@ -44,13 +44,20 @@ public final class Choking {
 		int slots = 0;
 		for (PeerChannel channel : candidates) {
 			if (channel.isOptimistic()) {
-				// Channel is optimistic but not current (expired).
+				// Channel is optimistic and not current (expired).
+				// Ignore it, we don't mess here with optimistic unchoking.
 				continue;
 			}
 			boolean full_slots = (optimistic + regular + slots) >= MAX_SLOTS;
 			boolean interested = channel.isInterested();
+			boolean am_choked = channel.amChoked();
 			boolean former_optimistic = channel.isFormerOptimistic();
-			if (full_slots || !interested || !former_optimistic) {
+			// Candidates that are choking the client are forced to pass
+			// through an optimistic slot at least once. This constraint,
+			// and ANTI-SNUBBING, can increase the optimistic slots.
+			boolean promote = !am_choked || former_optimistic;
+			boolean snubbed = channel.amSnubbed();
+			if (full_slots || !interested || !promote || snubbed) {
 				channel.updateIsChoked(true);
 				continue;
 			}
@@ -80,7 +87,7 @@ public final class Choking {
 
 		for (PeerChannel channel : candidates) {
 			if (channel.isOptimistic()) {
-				// Channel is optimistic but not current (expired).
+				// Channel is optimistic and not current (expired).
 				// Don't choke here to avoid CHOKE / UNCHOKE messages,
 				// assuming the regular choking won't choke the channel.
 				channel.setIsOptimistic(false);
@@ -88,7 +95,8 @@ public final class Choking {
 			}
 		}
 
-		removeFormerOptimistic(candidates);
+		// At this point, the unchoked channels have been expired.
+		removeUnchokedOrFormerOptimistic(candidates);
 
 		if (candidates.isEmpty()) {
 			for (PeerChannel channel : channels) {
@@ -115,13 +123,15 @@ public final class Choking {
 
 	}
 
-	private static int removeFormerOptimistic(List<PeerChannel> channels) {
+	private static int removeUnchokedOrFormerOptimistic(
+			List<PeerChannel> channels) {
+
 		// Returns the number of channels removed.
 		Iterator<PeerChannel> it = channels.iterator();
 		int count = 0;
 		while (it.hasNext()) {
 			PeerChannel channel = it.next();
-			if (channel.isFormerOptimistic()) {
+			if (!channel.isChoked() || channel.isFormerOptimistic()) {
 				it.remove();
 				count++;
 			}

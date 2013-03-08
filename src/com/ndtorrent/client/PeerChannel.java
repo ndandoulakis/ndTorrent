@@ -3,6 +3,7 @@ package com.ndtorrent.client;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 public final class PeerChannel {
 	private static final int MIN_REQUESTS = 2;
@@ -33,7 +34,9 @@ public final class PeerChannel {
 
 	private LinkedList<Message> incoming = new LinkedList<Message>();
 	private LinkedList<Message> outgoing = new LinkedList<Message>();
-	// ? outgoing_pieces
+
+	// Separate list for Piece messages to reduce "iterate and filter" code.
+	private LinkedList<Message> outgoing_pieces = new LinkedList<Message>();
 
 	// Requests and pieces the client has received.
 	private LinkedList<Message> unprocessed = new LinkedList<Message>();
@@ -64,16 +67,21 @@ public final class PeerChannel {
 		// Notification messages have higher priority and are sent ASAP,
 		// because subsequent Pieces in a slow upload channel can block
 		// peers from communicating.
-		final boolean non_pieces = true;
-		final boolean any_message = false;
-		sendOutgoing(non_pieces);
-		sendOutgoing(any_message);
+		sendOutgoing(outgoing);
+		sendOutgoing(outgoing_pieces);
 	}
 
 	public boolean hasOutgoingMessages() {
-		// TODO later I'll use a separate queue for the blocks,
-		// and I'll have to check for prepared blocks.
-		return !outgoing.isEmpty() || socket.hasOutputMessage();
+		return socket.hasOutputMessage() || hasReadyOutgoingPiece()
+				|| !outgoing.isEmpty();
+	}
+
+	private boolean hasReadyOutgoingPiece() {
+		for (Message m : outgoing_pieces) {
+			if (m.isPrepared())
+				return true;
+		}
+		return false;
 	}
 
 	public boolean hasUnprocessedIncoming() {
@@ -201,7 +209,8 @@ public final class PeerChannel {
 		is_choked = choke;
 		if (is_choked) {
 			outgoing.add(Message.newChoke());
-			removeOutgoingPieces();
+			// TODO unrocessed_requests.clear();
+			outgoing_pieces.clear();
 		} else {
 			outgoing.add(Message.newUnchoke());
 		}
@@ -228,18 +237,20 @@ public final class PeerChannel {
 		if (!m.isPiece())
 			throw new IllegalArgumentException(m.getType());
 
-		outgoing.add(m);
+		outgoing_pieces.add(m);
 	}
 
 	public void addKeepAlive() {
 		outgoing.add(Message.newKeepAlive());
 	}
 
-	private void removeOutgoingPieces() {
-		Iterator<Message> iter = outgoing.iterator();
+	private void removeOutgoingPiece(Message m) {
+		Iterator<Message> iter = outgoing_pieces.iterator();
 		while (iter.hasNext()) {
-			if (iter.next().isPiece())
+			if (m.sameBlockRegion(iter.next())) {
 				iter.remove();
+				return;
+			}
 		}
 	}
 
@@ -252,6 +263,17 @@ public final class PeerChannel {
 		}
 	}
 
+	private void removeUnprocessedRequest(Message m) {
+		Iterator<Message> iter = unprocessed.iterator();
+		while (iter.hasNext()) {
+			Message e = iter.next();
+			if (e.isBlockRequest() && m.sameBlockRegion(e)) {
+				iter.remove();
+				return;
+			}
+		}
+	}
+
 	private void receiveIncoming() {
 		while (true) {
 			socket.processInput();
@@ -261,13 +283,11 @@ public final class PeerChannel {
 		}
 	}
 
-	private void sendOutgoing(boolean non_pieces) {
+	private void sendOutgoing(List<Message> messages) {
 		socket.processOutput();
-		Iterator<Message> iter = outgoing.iterator();
+		Iterator<Message> iter = messages.iterator();
 		while (iter.hasNext()) {
 			Message m = iter.next();
-			if (non_pieces && m.isPiece())
-				continue;
 			if (!m.isPrepared())
 				continue;
 			if (socket.hasOutputMessage())
@@ -339,7 +359,8 @@ public final class PeerChannel {
 
 	private void onNotInterested(Message m) {
 		is_interested = false;
-		removeOutgoingPieces();
+		// TODO unprocessed_requests.clear();
+		outgoing_pieces.clear();
 	}
 
 	private void onHave(Message m) {
@@ -352,6 +373,7 @@ public final class PeerChannel {
 	}
 
 	private void onRequest(Message m) {
+		// TODO pipelined = outoing_pieces + unprocessed
 		if (!is_choked)
 			unprocessed.add(m);
 	}
@@ -374,14 +396,10 @@ public final class PeerChannel {
 	}
 
 	private void onCancel(Message m) {
-		Iterator<Message> iter = outgoing.iterator();
-		while (iter.hasNext()) {
-			Message out = iter.next();
-			if (out.isPiece() && m.sameBlockRegion(out)) {
-				iter.remove();
-				return;
-			}
-		}
+		// The request is either processed and the piece is already enqueued,
+		removeOutgoingPiece(m);
+		// or unprocessed.
+		removeUnprocessedRequest(m);
 	}
 
 }

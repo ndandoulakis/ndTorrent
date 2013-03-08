@@ -39,7 +39,8 @@ public final class PeerChannel {
 	private LinkedList<Message> outgoing_pieces = new LinkedList<Message>();
 
 	// Requests and pieces the client has received.
-	private LinkedList<Message> unprocessed = new LinkedList<Message>();
+	private LinkedList<Message> unprocessed_pieces = new LinkedList<Message>();
+	private LinkedList<Message> unprocessed_requests = new LinkedList<Message>();
 
 	// Requests the client has sent.
 	private LinkedList<Message> unfulfilled = new LinkedList<Message>();
@@ -85,11 +86,15 @@ public final class PeerChannel {
 	}
 
 	public boolean hasUnprocessedIncoming() {
-		return !unprocessed.isEmpty();
+		return !unprocessed_pieces.isEmpty() || !unprocessed_requests.isEmpty();
 	}
 
 	public Message takeUnprocessedIncoming() {
-		return unprocessed.pollFirst();
+		// Returns null if no message exists.
+		if (!unprocessed_pieces.isEmpty())
+			return unprocessed_pieces.pollFirst();
+		else
+			return unprocessed_requests.pollFirst();
 	}
 
 	public boolean participatedIn(int piece_index) {
@@ -209,8 +214,8 @@ public final class PeerChannel {
 		is_choked = choke;
 		if (is_choked) {
 			outgoing.add(Message.newChoke());
-			// TODO unrocessed_requests.clear();
 			outgoing_pieces.clear();
+			unprocessed_requests.clear();
 		} else {
 			outgoing.add(Message.newUnchoke());
 		}
@@ -264,10 +269,9 @@ public final class PeerChannel {
 	}
 
 	private void removeUnprocessedRequest(Message m) {
-		Iterator<Message> iter = unprocessed.iterator();
+		Iterator<Message> iter = unprocessed_requests.iterator();
 		while (iter.hasNext()) {
-			Message e = iter.next();
-			if (e.isBlockRequest() && m.sameBlockRegion(e)) {
+			if (m.sameBlockRegion(iter.next())) {
 				iter.remove();
 				return;
 			}
@@ -359,8 +363,8 @@ public final class PeerChannel {
 
 	private void onNotInterested(Message m) {
 		is_interested = false;
-		// TODO unprocessed_requests.clear();
 		outgoing_pieces.clear();
+		unprocessed_requests.clear();
 	}
 
 	private void onHave(Message m) {
@@ -375,7 +379,7 @@ public final class PeerChannel {
 	private void onRequest(Message m) {
 		// TODO pipelined = outoing_pieces + unprocessed
 		if (!is_choked)
-			unprocessed.add(m);
+			unprocessed_requests.add(m);
 	}
 
 	private void onPiece(Message m) {
@@ -383,7 +387,7 @@ public final class PeerChannel {
 		while (iter.hasNext()) {
 			Message request = iter.next();
 			if (m.sameBlockRegion(request)) {
-				unprocessed.add(m);
+				unprocessed_pieces.add(m);
 				participated.set(m.getPieceIndex());
 				iter.remove();
 				return;

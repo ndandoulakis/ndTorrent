@@ -379,8 +379,8 @@ public final class PeerChannel {
 	}
 
 	private void onRequest(Message m) {
-		// TODO pipelined = outoing_pieces + unprocessed
-		if (!is_choked)
+		int pipelined = outgoing_pieces.size() + unprocessed_requests.size();
+		if (!is_choked && pipelined < MAX_REQUESTS)
 			unprocessed_requests.add(m);
 	}
 

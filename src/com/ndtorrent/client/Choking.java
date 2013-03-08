@@ -95,7 +95,7 @@ public final class Choking {
 			}
 		}
 
-		// At this point, the unchoked channels have been expired.
+		// At this point, any unchoked candidate has been expired.
 		removeUnchokedOrFormerOptimistic(candidates);
 
 		if (candidates.isEmpty()) {

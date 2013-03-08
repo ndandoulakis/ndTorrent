@@ -363,6 +363,8 @@ public final class PeerChannel {
 
 	private void onNotInterested(Message m) {
 		is_interested = false;
+
+		// Discard pending pieces because it might not get choked.
 		outgoing_pieces.clear();
 		unprocessed_requests.clear();
 	}
@@ -400,7 +402,7 @@ public final class PeerChannel {
 	}
 
 	private void onCancel(Message m) {
-		// The request is either processed and the piece is already enqueued,
+		// The request is either already processed and the piece is enqueued,
 		removeOutgoingPiece(m);
 		// or unprocessed.
 		removeUnprocessedRequest(m);

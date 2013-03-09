@@ -24,6 +24,7 @@ import com.ndtorrent.client.tracker.Session;
 public final class Peer extends Thread {
 	static final int MAX_PEERS = 40;
 	static final long NOTIFY_STATUS_INTERVAL = (long) 1e9;
+	static final long ONE_MINUTE = (long) (60 * 1e9);
 
 	private volatile boolean stop_requested;
 
@@ -38,6 +39,8 @@ public final class Peer extends Thread {
 	// Expose status through local Data Transfer Object messages.
 	private long last_status_at;
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
+
+	private long last_time_m;
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -315,12 +318,20 @@ public final class Peer extends Thread {
 		// Since it's possible a remote peer to discard any request,
 		// all pending requests are removed when the corresponding
 		// piece has to be updated for more than one minute.
+
+		// Attempt to remove delayed requests once per minute to give
+		// a chance to pieces to get the next enqueued requests.
 		long now = System.nanoTime();
+		if (now - last_time_m < ONE_MINUTE)
+			return;
+
+		last_time_m = now;
+
 		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
 		for (Entry<Integer, Piece> entry : partial_entries) {
 			Piece piece = entry.getValue();
 			int index = entry.getKey();
-			if (now - piece.modifiedAt() > 60 * 1e9)
+			if (now - piece.modifiedAt() > ONE_MINUTE)
 				for (SelectionKey key : channel_selector.keys()) {
 					PeerChannel channel = (PeerChannel) key.attachment();
 					if (channel.hasPiece(index)) {

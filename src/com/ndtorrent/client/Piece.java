@@ -29,6 +29,8 @@ public final class Piece {
 		tail_length = piece_length % block_length;
 		if (piece_length != 0 && tail_length == 0)
 			tail_length = block_length;
+		
+		modified_at = System.nanoTime();
 	}
 
 	public boolean isValid(/* expected_sha1 */) {

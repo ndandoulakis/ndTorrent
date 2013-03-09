@@ -323,8 +323,11 @@ public final class Peer extends Thread {
 			if (now - piece.modifiedAt() > 60 * 1e9)
 				for (SelectionKey key : channel_selector.keys()) {
 					PeerChannel channel = (PeerChannel) key.attachment();
-					if (channel.hasPiece(index))
+					if (channel.hasPiece(index)) {
+						// We didn't check if the channel actually has
+						// requests for this piece, but it doesn't matter.
 						channel.removePendingRequests(index);
+					}
 				}
 		}
 	}

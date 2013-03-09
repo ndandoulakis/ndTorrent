@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 public final class Piece {
+	static final long ONE_MINUTE = (long) (60 * 1e9);
+
 	private int num_blocks;
 	private int block_length;
 	private int tail_length;
@@ -11,7 +13,7 @@ public final class Piece {
 	private ByteBuffer data;
 	private BitSet available;
 	private BitSet notrequested;
-	private long modified_at;
+	private long timeout;
 
 	public Piece(int length) {
 		this(length, 16 * 1024);
@@ -29,8 +31,8 @@ public final class Piece {
 		tail_length = piece_length % block_length;
 		if (piece_length != 0 && tail_length == 0)
 			tail_length = block_length;
-		
-		modified_at = System.nanoTime();
+
+		resetTimeout();
 	}
 
 	public boolean isValid(/* expected_sha1 */) {
@@ -82,8 +84,13 @@ public final class Piece {
 		return false;
 	}
 
-	public long modifiedAt() {
-		return modified_at;
+	public void resetTimeout() {
+		long now = System.nanoTime();
+		timeout = now + ONE_MINUTE;
+	}
+
+	public long getTimeout() {
+		return timeout;
 	}
 
 	public void write(Message block) {
@@ -95,7 +102,7 @@ public final class Piece {
 		data.position(offset);
 		data.put(block.getData().array(), 1 + 2 * 4, length);
 		available.set(getBlockIndex(offset), true);
-		modified_at = System.nanoTime();
+		resetTimeout();
 	}
 
 	public int numBlocks() {

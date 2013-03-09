@@ -23,7 +23,6 @@ import com.ndtorrent.client.tracker.Session;
 
 public final class Peer extends Thread {
 	static final int MAX_PEERS = 40;
-	static final long ONE_MINUTE = (long) (60 * 1e9);
 	static final long ONE_SECOND = (long) 1e9;
 
 	private volatile boolean stop_requested;
@@ -40,7 +39,6 @@ public final class Peer extends Thread {
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
 	// Timestamps for methods that are executed periodically.
-	private long removed_delayed_requests_at;
 	private long status_notification_at;
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
@@ -320,19 +318,12 @@ public final class Peer extends Thread {
 		// all pending requests are removed when the corresponding
 		// piece has to be updated for more than one minute.
 
-		// Attempt to remove delayed requests once per minute to give
-		// a chance to pieces to get the next enqueued requests.
-		long now = System.nanoTime();
-		if (now - removed_delayed_requests_at < ONE_MINUTE)
-			return;
-
-		removed_delayed_requests_at = now;
-
 		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
+		long now = System.nanoTime();
 		for (Entry<Integer, Piece> entry : partial_entries) {
 			Piece piece = entry.getValue();
 			int index = entry.getKey();
-			if (now - piece.modifiedAt() > ONE_MINUTE)
+			if (now > piece.getTimeout()) {
 				for (SelectionKey key : channel_selector.keys()) {
 					PeerChannel channel = (PeerChannel) key.attachment();
 					if (channel.hasPiece(index)) {
@@ -341,6 +332,8 @@ public final class Peer extends Thread {
 						channel.removePendingRequests(index);
 					}
 				}
+				piece.resetTimeout();
+			}
 		}
 	}
 

@@ -8,6 +8,9 @@ public final class ConnectionInfo {
 	private final String address;
 	private final String id;
 	private final double input_rate;
+	private final double output_rate;
+	private final long input_total;
+	private final long output_total;
 	private final boolean am_choked;
 	private final boolean am_interested;
 	private final boolean is_choked;
@@ -20,6 +23,9 @@ public final class ConnectionInfo {
 		address = channel.socket.getRemoteSocketAddress().toString();
 		id = channel.socket.getInputHandshake().getID();
 		input_rate = channel.socket.inputPerSec();
+		output_rate = channel.socket.outputPerSec();
+		input_total = channel.socket.getInputTotal();
+		output_total = channel.socket.getOutputTotal();
 		am_choked = channel.amChoked();
 		am_interested = channel.amInterested();
 		is_choked = channel.isChoked();
@@ -38,6 +44,18 @@ public final class ConnectionInfo {
 
 	public double getInputRate() {
 		return input_rate;
+	}
+
+	public double getOutputRate() {
+		return output_rate;
+	}
+
+	public long getInputTotal() {
+		return input_total;
+	}
+
+	public long getOutputTotal() {
+		return output_total;
 	}
 
 	public boolean amChoked() {

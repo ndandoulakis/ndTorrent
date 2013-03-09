@@ -101,8 +101,9 @@ public final class Peer extends Thread {
 				processOutgoingMessages();
 				removeBrokenChannels();
 				removeFellowSeeders();
-				// restoreRejectedPieces();
+				removeDelayedRequests();
 				restoreBrokenRequests();
+				// restoreRejectedPieces();
 				spawnOutgoingConnections();
 				processIncomingMessages();
 				advertisePieces();
@@ -310,10 +311,27 @@ public final class Peer extends Thread {
 		}
 	}
 
+	private void removeDelayedRequests() {
+		// Since it's possible a remote peer to discard any request,
+		// all pending requests are removed when the corresponding
+		// piece has to be updated for more than one minute.
+		long now = System.nanoTime();
+		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
+		for (Entry<Integer, Piece> entry : partial_entries) {
+			Piece piece = entry.getValue();
+			int index = entry.getKey();
+			if (now - piece.modifiedAt() > 60 * 1e9)
+				for (SelectionKey key : channel_selector.keys()) {
+					PeerChannel channel = (PeerChannel) key.attachment();
+					if (channel.hasPiece(index))
+						channel.removePendingRequests(index);
+				}
+		}
+	}
+
 	private void restoreBrokenRequests() {
 		// If a block is flagged as requested but no channel has a corresponding
 		// unfulfilled request, it's considered broken and must be restored.
-		// TODO pieces not updated for a minute; remove remaining requests.
 		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
 		BitSet requested = new BitSet();
 		for (Entry<Integer, Piece> entry : partial_entries) {
@@ -399,10 +417,10 @@ public final class Peer extends Thread {
 				if (!channel.canRequestMore())
 					break;
 				int index = entry.getKey();
-				if (!channel.hasPiece(index))
-					continue;
-				Piece piece = entry.getValue();
-				channel.addOutgoingRequests(index, piece);
+				if (channel.hasPiece(index)) {
+					Piece piece = entry.getValue();
+					channel.addOutgoingRequests(index, piece);
+				}
 			}
 			if (channel.canRequestMore()) {
 				int index = selectUnregisteredPiece(channel);

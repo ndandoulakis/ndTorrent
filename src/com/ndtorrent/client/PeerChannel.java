@@ -13,7 +13,7 @@ public final class PeerChannel {
 
 	private BitSet available = new BitSet();
 	private BitSet have_advertised = new BitSet();
-	private BitSet participated = new BitSet();
+	private BitSet participated = new BitSet(); // received Piece indices
 
 	public boolean is_initiator;
 	public boolean is_banned;
@@ -265,6 +265,24 @@ public final class PeerChannel {
 		while (iter.hasNext()) {
 			if (iter.next().isBlockRequest())
 				iter.remove();
+		}
+	}
+
+	public void removePendingRequests(int piece_index) {
+		Iterator<Message> iter;
+		iter = unfulfilled.iterator();
+		while (iter.hasNext()) {
+			Message m = iter.next();
+			if (m.getPieceIndex() == piece_index) {
+				iter.remove();
+			}
+		}
+		iter = outgoing.iterator();
+		while (iter.hasNext()) {
+			Message m = iter.next();
+			if (m.isBlockRequest() && m.getPieceIndex() == piece_index) {
+				iter.remove();
+			}
 		}
 	}
 

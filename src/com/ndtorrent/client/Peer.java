@@ -23,8 +23,8 @@ import com.ndtorrent.client.tracker.Session;
 
 public final class Peer extends Thread {
 	static final int MAX_PEERS = 40;
-	static final long NOTIFY_STATUS_INTERVAL = (long) 1e9;
 	static final long ONE_MINUTE = (long) (60 * 1e9);
+	static final long ONE_SECOND = (long) 1e9;
 
 	private volatile boolean stop_requested;
 
@@ -37,10 +37,11 @@ public final class Peer extends Thread {
 	private List<Session> sessions = new ArrayList<Session>();
 
 	// Expose status through local Data Transfer Object messages.
-	private long last_status_at;
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
-	private long last_time_m;
+	// Timestamps for methods that are executed periodically.
+	private long removed_delayed_requests_at;
+	private long status_notification_at;
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -322,10 +323,10 @@ public final class Peer extends Thread {
 		// Attempt to remove delayed requests once per minute to give
 		// a chance to pieces to get the next enqueued requests.
 		long now = System.nanoTime();
-		if (now - last_time_m < ONE_MINUTE)
+		if (now - removed_delayed_requests_at < ONE_MINUTE)
 			return;
 
-		last_time_m = now;
+		removed_delayed_requests_at = now;
 
 		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
 		for (Entry<Integer, Piece> entry : partial_entries) {
@@ -521,10 +522,10 @@ public final class Peer extends Thread {
 			return;
 
 		long now = System.nanoTime();
-		if (now - last_status_at < NOTIFY_STATUS_INTERVAL)
+		if (now - status_notification_at < ONE_SECOND)
 			return;
 
-		last_status_at = now;
+		status_notification_at = now;
 
 		List<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
 		for (SelectionKey key : channel_selector.keys()) {

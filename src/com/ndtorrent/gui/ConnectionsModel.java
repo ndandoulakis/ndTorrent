@@ -43,11 +43,36 @@ public final class ConnectionsModel extends AbstractTableModel {
 			return info.getIP();
 		case 1:
 			return info.getID();
+		case 2:
+			return getFlagsValue(info);
 		case 3:
 			return String.format("%.1f kB/s", info.getInputRate() / 1000);
 		default:
 			return null;
 		}
+	}
+
+	private String getFlagsValue(ConnectionInfo info) {
+		StringBuilder builder = new StringBuilder();
+		if (info.amInterested() && !info.amChoked())
+			builder.append('D');
+		if (info.amInterested() && info.amChoked())
+			builder.append('d');
+		if (info.isInterested() && !info.isChoked())
+			builder.append('U');
+		if (info.isInterested() && info.isChoked())
+			builder.append('u');
+		if (info.isOptimistic())
+			builder.append('O');
+		if (info.amSnubbed())
+			builder.append('S');
+		if (info.isInitiator())
+			builder.append('I');
+		if (!info.amChoked() && !info.amInterested())
+			builder.append('K');
+		if (!info.isChoked() && !info.isInterested())
+			builder.append('?');
+		return builder.toString();
 	}
 
 }

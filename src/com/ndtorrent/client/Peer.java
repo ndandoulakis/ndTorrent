@@ -39,7 +39,7 @@ public final class Peer extends Thread {
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
 	// Timestamps for methods that are executed periodically.
-	private long status_notification_at;
+	private long last_status_at;
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -515,10 +515,10 @@ public final class Peer extends Thread {
 			return;
 
 		long now = System.nanoTime();
-		if (now - status_notification_at < ONE_SECOND)
+		if (now - last_status_at < ONE_SECOND)
 			return;
 
-		status_notification_at = now;
+		last_status_at = now;
 
 		List<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
 		for (SelectionKey key : channel_selector.keys()) {

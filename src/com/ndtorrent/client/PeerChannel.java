@@ -35,7 +35,7 @@ public final class PeerChannel {
 	private LinkedList<Message> incoming = new LinkedList<Message>();
 	private LinkedList<Message> outgoing = new LinkedList<Message>();
 
-	// Separate list for Piece messages to reduce "iterate and filter" code.
+	// Distinct list for Piece messages to reduce "iterate and filter" code.
 	private LinkedList<Message> outgoing_pieces = new LinkedList<Message>();
 
 	// Requests and pieces the client has received.
@@ -114,7 +114,7 @@ public final class PeerChannel {
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
-		final int REQUESTS = 5; // TODO adjust dynamically
+		final int REQUESTS = 5;
 		return unfulfilled.size() < Math.max(MIN_REQUESTS,
 				(Math.min(REQUESTS, MAX_REQUESTS)));
 	}
@@ -314,7 +314,7 @@ public final class PeerChannel {
 				continue;
 			if (socket.hasOutputMessage())
 				return;
-			System.out.printf("sent %s, %d\n", m.getType(), m.getLength());
+			// System.out.printf("sent %s, %d\n", m.getType(), m.getLength());
 			socket.setOutputMessage(m);
 			socket.processOutput();
 			iter.remove();
@@ -325,7 +325,7 @@ public final class PeerChannel {
 		while (!incoming.isEmpty()) {
 			Message m = incoming.pollFirst();
 
-			System.out.printf("got %s, %d\n", m.getType(), m.getLength());
+			// System.out.printf("got %s, %d\n", m.getType(), m.getLength());
 
 			if (m.isKeepAlive())
 				continue;

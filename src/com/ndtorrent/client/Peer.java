@@ -327,8 +327,7 @@ public final class Peer extends Thread {
 				for (SelectionKey key : channel_selector.keys()) {
 					PeerChannel channel = (PeerChannel) key.attachment();
 					if (channel.hasPiece(index)) {
-						// We didn't check if the channel actually has
-						// requests for this piece, but it doesn't matter.
+						// We can call this even if there are no requests.
 						channel.removePendingRequests(index);
 					}
 				}

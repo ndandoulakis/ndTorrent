@@ -22,7 +22,7 @@ import com.ndtorrent.client.tracker.Event;
 import com.ndtorrent.client.tracker.Session;
 
 public final class Peer extends Thread {
-	static final int MAX_PEERS = 40;
+	static final int MAX_PEERS = 80;
 	static final long ONE_SECOND = (long) 1e9;
 
 	private volatile boolean stop_requested;
@@ -37,9 +37,6 @@ public final class Peer extends Thread {
 
 	// Expose status through local Data Transfer Object messages.
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
-
-	// Timestamps for methods that are executed periodically.
-	private long last_status_at;
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -79,41 +76,50 @@ public final class Peer extends Thread {
 			stop_requested = true;
 		}
 
+		long last_time = 0;
+
 		while (!stop_requested) {
 			try {
-				updateTrackerSessions();
-				// update peer Set
-
 				// a Selector doesn't clear the selected keys so it's our
 				// responsibility to do it.
+				removeBrokenSockets();
 				socket_selector.selectedKeys().clear();
 				socket_selector.selectNow();
 				// processConnectMessages();
 				processHandshakeMessages();
-				removeBrokenSockets();
 
+				removeBrokenChannels();
 				configureChannelKeys();
 				channel_selector.selectedKeys().clear();
 				channel_selector.select(100);
 
-				// processOutgoingMessages is called prior doing anything else,
-				// mostly because it operates on selected keys. We get rid of
-				// messages before new additions, especially for non selected
-				// keys, and before connections are removed.
+				// High priority //
+				processIncomingMessages();
 				processOutgoingMessages();
-				removeBrokenChannels();
-				removeFellowSeeders();
+				requestMoreBlocks();
+
+				// Low priority //
+				// Operations that are performed once per second,
+				// and make use of all selected keys
+				long now = System.nanoTime();
+				if (now - last_time < ONE_SECOND)
+					continue;
+
+				last_time = now;
+
 				removeDelayedRequests();
 				restoreBrokenRequests();
 				// restoreRejectedPieces();
-				spawnOutgoingConnections();
-				processIncomingMessages();
 				advertisePieces();
 				updateAmInterestedState();
 				choking();
-				requestMoreBlocks();
+				removeFellowSeeders();
 				// update input/output totals
 				keepConnectionsAlive();
+				spawnOutgoingConnections();
+
+				updateTrackerSessions();
+				// update peer Set
 
 				notifyStatusObservers();
 
@@ -210,8 +216,7 @@ public final class Peer extends Thread {
 			if (!key.isValid())
 				continue;
 			PeerChannel channel = (PeerChannel) key.attachment();
-			if ((!channel.amChoked() && channel.amInterested() && channel
-					.canRequestMore()) || channel.hasOutgoingMessages())
+			if (channel.hasOutgoingMessages())
 				key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
 			else
 				key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
@@ -414,11 +419,10 @@ public final class Peer extends Thread {
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.
 		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
-		for (SelectionKey key : channel_selector.selectedKeys()) {
-			if (!key.isValid() || !key.isWritable())
-				continue;
+		for (SelectionKey key : channel_selector.keys()) {
 			PeerChannel channel = (PeerChannel) key.attachment();
-			if (channel.amChoked() || !channel.amInterested())
+			if (channel.amChoked() || !channel.amInterested()
+					|| !channel.canRequestMore())
 				continue;
 			for (Entry<Integer, Piece> entry : partial_entries) {
 				if (!channel.canRequestMore())
@@ -512,12 +516,6 @@ public final class Peer extends Thread {
 	private void notifyStatusObservers() {
 		if (observers.isEmpty())
 			return;
-
-		long now = System.nanoTime();
-		if (now - last_status_at < ONE_SECOND)
-			return;
-
-		last_status_at = now;
 
 		List<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
 		for (SelectionKey key : channel_selector.keys()) {

@@ -46,9 +46,9 @@ public final class ConnectionsModel extends AbstractTableModel {
 		case 2:
 			return getFlagsValue(info);
 		case 3:
-			return String.format("%.1f kB", info.getInputRate() / 1024.0);
+			return String.format("%.1f kB/s", info.getInputRate() / 1024.0);
 		case 4:
-			return String.format("%.1f kB", info.getOutputRate() / 1024.0);
+			return String.format("%.1f kB/s", info.getOutputRate() / 1024.0);
 		case 5:
 			return String.format("%.1f kB", info.getInputTotal() / 1024.0);
 		case 6:

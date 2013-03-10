@@ -100,7 +100,7 @@ public final class Peer extends Thread {
 
 				// Low priority //
 				// Operations that are performed once per second,
-				// and make use of all selected keys
+				// and make use of all keys.
 				long now = System.nanoTime();
 				if (now - last_time < ONE_SECOND)
 					continue;
@@ -403,8 +403,6 @@ public final class Peer extends Thread {
 	}
 
 	private void choking() {
-		// TODO update once per second
-
 		if (isSeed())
 			Choking.updateAsSeed(getChannels());
 		else

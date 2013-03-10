@@ -34,7 +34,7 @@ public final class Torrent {
 		num_pieces = sha1_list.length / 20;
 
 		available = new BitSet(num_pieces);
-		// bitfield.set(0, num_pieces); // act as a seed
+		// available.set(0, num_pieces / 2); // test
 
 		unregistered = new BitSet(num_pieces);
 		unregistered.set(0, num_pieces);
@@ -130,11 +130,17 @@ public final class Torrent {
 			writer.submit(new Runnable() {
 				@Override
 				public void run() {
-					if (piece.isValid() && savePiece(index, piece)) {
-						available.set(index, true);
-					} else {
+					if (!piece.isValid()) {
 						// TODO reject
+						return;
 					}
+
+					if (!savePiece(index, piece)) {
+						// error
+						return;
+					}
+
+					available.set(index, true);
 				}
 			});
 		}

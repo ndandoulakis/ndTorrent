@@ -486,14 +486,14 @@ public final class Peer extends Thread {
 	private void keepConnectionsAlive() {
 		long now = System.nanoTime();
 		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel peer = (PeerChannel) key.attachment();
+			PeerChannel channel = (PeerChannel) key.attachment();
 			// If the socket has an outgoing message for more than 60 seconds,
 			// it probably has stalled. In this case we don't add a keep-alive
 			// message.
 			// TODO? BTSocket.hasStalled(): hasOutput && upload_rate==0
-			if (now - peer.socket.lastOutputMessageAt() > 60 * 1e9
-					&& !peer.socket.hasOutputMessage()) {
-				peer.addKeepAlive();
+			if (now - channel.socket.lastOutputMessageAt() > 60 * 1e9
+					&& !channel.socket.hasOutputMessage()) {
+				channel.addKeepAlive();
 			}
 		}
 	}

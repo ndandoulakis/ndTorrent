@@ -44,6 +44,10 @@ public class TorrentsModel extends AbstractTableModel {
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		TorrentInfo info = torrent;
 		switch (columnIndex) {
+		case 0:
+			return info.getName();
+		case 1:
+			return String.format("%,.1f KB", info.getLength() / 1000.0);
 		case 2:
 			return info;
 

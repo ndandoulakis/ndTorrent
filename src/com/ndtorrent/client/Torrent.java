@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class Torrent {
+	private String name;
 	private int piece_length;
 	private long total_length;
 	private String parent_path;
@@ -40,9 +41,11 @@ public final class Torrent {
 		unregistered.set(0, num_pieces);
 		unregistered.andNot(available);
 
+		name = meta.getName();
+
 		parent_path = storage_location;
 		if (meta.areMultipleFiles()) {
-			parent_path += '/' + meta.getName();
+			parent_path += '/' + name;
 		}
 
 		files = BTFile.fromMetaInfo(meta);
@@ -76,6 +79,10 @@ public final class Torrent {
 	public long getRemainingLength() {
 		// TODO sum unregistered subtract partial
 		return total_length;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public long getTotalLength() {

@@ -29,7 +29,6 @@ public class Frontend implements StatusObserver {
 	private TableFrame trackersFrame;
 	private TableFrame piecesFrame;
 	private TableFrame connectionsFrame;
-	private BarRenderer torrentBar;
 	private JSplitPane splitPane_1;
 	private JSplitPane splitPane_2;
 	private JSplitPane splitPane_3;
@@ -76,9 +75,6 @@ public class Frontend implements StatusObserver {
 				new BoxLayout(frmNdtorrentAlpha.getContentPane(),
 						BoxLayout.Y_AXIS));
 
-		torrentBar = new BarRenderer();
-		frmNdtorrentAlpha.getContentPane().add(torrentBar);
-
 		splitPane_1 = new JSplitPane();
 		splitPane_1.setResizeWeight(0.33);
 		splitPane_1.setOrientation(JSplitPane.VERTICAL_SPLIT);
@@ -87,6 +83,7 @@ public class Frontend implements StatusObserver {
 		torrentsFrame = new TableFrame("Torrents");
 		splitPane_1.setLeftComponent(torrentsFrame);
 		torrentsFrame.setTableModel(new TorrentsModel());
+		torrentsFrame.setDefaultRenderer(BarRenderer.class, new BarRenderer());
 
 		splitPane_2 = new JSplitPane();
 		splitPane_1.setRightComponent(splitPane_2);
@@ -156,9 +153,9 @@ public class Frontend implements StatusObserver {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				// ? check info_hash
-				torrentBar.setBits(torrent.getAvailablePieces(),
-						torrent.numPieces());
+				// if (!observing(info_hash)) return;
+				((TorrentsModel) torrentsFrame.getTableModel())
+						.setTorrent(torrent);
 			}
 		});
 	}

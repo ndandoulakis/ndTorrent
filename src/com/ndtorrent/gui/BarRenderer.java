@@ -10,6 +10,8 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.TableCellRenderer;
 
+import com.ndtorrent.client.status.TorrentInfo;
+
 public class BarRenderer extends JComponent implements TableCellRenderer {
 
 	private static final long serialVersionUID = 1L;
@@ -26,7 +28,6 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 	public void setBits(BitSet bits, int nbits) {
 		this.bits = bits;
 		this.nbits = nbits;
-		repaint();
 	}
 
 	@Override
@@ -48,7 +49,10 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value,
 			boolean isSelected, boolean hasFocus, int row, int column) {
-		// TODO Auto-generated method stub
+
+		TorrentInfo info = (TorrentInfo) value;
+		setBits(info.getAvailablePieces(), info.numPieces());
+		
 		return this;
 	}
 

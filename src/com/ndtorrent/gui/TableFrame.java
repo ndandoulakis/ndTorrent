@@ -5,6 +5,7 @@ import javax.swing.JInternalFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 public class TableFrame extends JInternalFrame {
@@ -43,6 +44,12 @@ public class TableFrame extends JInternalFrame {
 
 	public TableModel getTableModel() {
 		return table.getModel();
+	}
+
+	public void setDefaultRenderer(Class<?> columnClass,
+			TableCellRenderer renderer) {
+
+		table.setDefaultRenderer(columnClass, renderer);
 	}
 
 	public static String displayDeltaTime(int delta_secs) {

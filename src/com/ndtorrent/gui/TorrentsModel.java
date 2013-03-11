@@ -1,7 +1,5 @@
 package com.ndtorrent.gui;
 
-import java.util.List;
-
 import javax.swing.table.AbstractTableModel;
 
 import com.ndtorrent.client.status.TorrentInfo;
@@ -15,16 +13,21 @@ public class TorrentsModel extends AbstractTableModel {
 	private String[] column_names = { "Name", "Size", "Status", "%",
 			"Dn Speed", "Up Speed" };
 
-	private List<TorrentInfo> torrents;
+	private TorrentInfo torrent;
 
-	public void setTorrents(List<TorrentInfo> torrents) {
-		this.torrents = torrents;
+	public void setTorrent(TorrentInfo torrent) {
+		this.torrent = torrent;
 		fireTableDataChanged();
 	}
 
 	@Override
 	public int getRowCount() {
-		return torrents == null ? 0 : torrents.size();
+		return torrent == null ? 0 : 1;
+	}
+
+	@Override
+	public Class<?> getColumnClass(int columnIndex) {
+		return columnIndex != 2 ? Object.class : BarRenderer.class;
 	}
 
 	@Override
@@ -39,8 +42,10 @@ public class TorrentsModel extends AbstractTableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		TorrentInfo info = torrents.get(rowIndex);
+		TorrentInfo info = torrent;
 		switch (columnIndex) {
+		case 2:
+			return info;
 
 		default:
 			return null;

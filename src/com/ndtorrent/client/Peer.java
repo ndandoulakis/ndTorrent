@@ -22,14 +22,14 @@ import com.ndtorrent.client.tracker.Event;
 import com.ndtorrent.client.tracker.Session;
 
 public final class Peer extends Thread {
-	static final int MAX_PEERS = 80;
-	static final long ONE_SECOND = (long) 1e9;
+	static final int MAX_CHANNELS = 80;
+	static final long SECOND = (long) 1e9;
 
 	private volatile boolean stop_requested;
 
-	private ClientInfo client_info;
 	private MetaInfo meta;
 	private Torrent torrent;
+	private ClientInfo client_info;
 	private Selector channel_selector;
 	private Selector socket_selector;
 
@@ -102,7 +102,7 @@ public final class Peer extends Thread {
 				// Operations that are performed once per second,
 				// and make use of all keys.
 				long now = System.nanoTime();
-				if (now - last_time < ONE_SECOND)
+				if (now - last_time < SECOND)
 					continue;
 
 				last_time = now;
@@ -242,7 +242,7 @@ public final class Peer extends Thread {
 	}
 
 	private void addReadyConnection(BTSocket socket) {
-		if (channel_selector.keys().size() >= MAX_PEERS) {
+		if (channel_selector.keys().size() >= MAX_CHANNELS) {
 			socket.close();
 			return;
 		}

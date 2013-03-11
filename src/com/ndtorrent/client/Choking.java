@@ -190,6 +190,8 @@ public final class Choking {
 	}
 
 	private static void sortByBlocksTotal(List<PeerChannel> channels) {
+		// Since a stable sorting is used, if 2 peers have the same total,
+		// their order remains as is in the list.
 		Collections.sort(channels, new Comparator<PeerChannel>() {
 			@Override
 			public int compare(PeerChannel c1, PeerChannel c2) {

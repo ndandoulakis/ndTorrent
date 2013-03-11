@@ -25,12 +25,14 @@ public class Frontend implements StatusObserver {
 	private JFrame frmNdtorrentAlpha;
 
 	private Client client = new Client();
+	private TableFrame torrentsFrame;
 	private TableFrame trackersFrame;
 	private TableFrame piecesFrame;
 	private TableFrame connectionsFrame;
 	private BarRenderer torrentBar;
 	private JSplitPane splitPane_1;
 	private JSplitPane splitPane_2;
+	private JSplitPane splitPane_3;
 
 	/**
 	 * Launch the application.
@@ -78,23 +80,32 @@ public class Frontend implements StatusObserver {
 		frmNdtorrentAlpha.getContentPane().add(torrentBar);
 
 		splitPane_1 = new JSplitPane();
-		frmNdtorrentAlpha.getContentPane().add(splitPane_1);
+		splitPane_1.setResizeWeight(0.33);
 		splitPane_1.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		frmNdtorrentAlpha.getContentPane().add(splitPane_1);
 
-		trackersFrame = new TableFrame("Trackers");
-		splitPane_1.setLeftComponent(trackersFrame);
-		trackersFrame.setTableModel(new TrackersModel());
+		torrentsFrame = new TableFrame("Torrents");
+		splitPane_1.setLeftComponent(torrentsFrame);
+		torrentsFrame.setTableModel(new TorrentsModel());
 
 		splitPane_2 = new JSplitPane();
-		splitPane_2.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		splitPane_1.setRightComponent(splitPane_2);
+		splitPane_2.setOrientation(JSplitPane.VERTICAL_SPLIT);
+
+		trackersFrame = new TableFrame("Trackers");
+		splitPane_2.setLeftComponent(trackersFrame);
+		trackersFrame.setTableModel(new TrackersModel());
+
+		splitPane_3 = new JSplitPane();
+		splitPane_3.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		splitPane_2.setRightComponent(splitPane_3);
 
 		piecesFrame = new TableFrame("Pieces");
-		splitPane_2.setLeftComponent(piecesFrame);
+		splitPane_3.setLeftComponent(piecesFrame);
 		piecesFrame.setTableModel(new PiecesModel());
 
 		connectionsFrame = new TableFrame("Connections");
-		splitPane_2.setRightComponent(connectionsFrame);
+		splitPane_3.setRightComponent(connectionsFrame);
 		connectionsFrame.setTableModel(new ConnectionsModel());
 
 		client.setServerPort(Client.DEFAULT_PORT);

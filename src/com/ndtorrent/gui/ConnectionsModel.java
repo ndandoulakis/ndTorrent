@@ -11,7 +11,7 @@ public final class ConnectionsModel extends AbstractTableModel {
 	private static final long serialVersionUID = 1L;
 
 	private String[] column_names = { "IP", "Client", "Flags", "Dn Speed",
-			"Up Speed", "Received", "Sent" };
+			"Up Speed", "Reqs", "Received", "Sent" };
 
 	private List<ConnectionInfo> connections;
 
@@ -50,9 +50,12 @@ public final class ConnectionsModel extends AbstractTableModel {
 		case 4:
 			return String.format("%.1f kB/s", info.getOutputRate() / 1024.0);
 		case 5:
-			return String.format("%.1f kB", info.getInputTotal() / 1024.0);
+			return String.format("%d | %d", info.numOutgoingRequests(),
+					info.numIncomingRequests());
 		case 6:
-			return String.format("%.1f kB", info.getOutputTotal() / 1024.0);
+			return String.format("%,.1f kB", info.getInputTotal() / 1024.0);
+		case 7:
+			return String.format("%,.1f kB", info.getOutputTotal() / 1024.0);
 
 		default:
 			return null;

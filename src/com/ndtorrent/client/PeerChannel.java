@@ -49,6 +49,14 @@ public final class PeerChannel {
 		return available.cardinality();
 	}
 
+	public int numIncomingRequests() {
+		return outgoing_pieces.size() + unprocessed_requests.size();
+	}
+
+	public int numOutgoingRequests() {
+		return unfulfilled.size();
+	}
+
 	public void rollBlocksTotal(long current_time) {
 		blocks_total.roll(current_time);
 		blocks_total.add(socket.blocksInputTotal());
@@ -397,8 +405,7 @@ public final class PeerChannel {
 	}
 
 	private void onRequest(Message m) {
-		int pipelined = outgoing_pieces.size() + unprocessed_requests.size();
-		if (!is_choked && pipelined < MAX_REQUESTS)
+		if (!is_choked && numIncomingRequests() < MAX_REQUESTS)
 			unprocessed_requests.add(m);
 	}
 

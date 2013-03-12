@@ -11,6 +11,8 @@ public final class ConnectionInfo {
 	private final double output_rate;
 	private final long input_total;
 	private final long output_total;
+	private final int incoming_requests;
+	private final int outgoing_requests;
 	private final boolean am_choked;
 	private final boolean am_interested;
 	private final boolean is_choked;
@@ -26,6 +28,8 @@ public final class ConnectionInfo {
 		output_rate = channel.socket.outputPerSec();
 		input_total = channel.socket.getInputTotal();
 		output_total = channel.socket.getOutputTotal();
+		incoming_requests = channel.numIncomingRequests();
+		outgoing_requests = channel.numOutgoingRequests();
 		am_choked = channel.amChoked();
 		am_interested = channel.amInterested();
 		is_choked = channel.isChoked();
@@ -56,6 +60,14 @@ public final class ConnectionInfo {
 
 	public long getOutputTotal() {
 		return output_total;
+	}
+
+	public int numIncomingRequests() {
+		return incoming_requests;
+	}
+
+	public int numOutgoingRequests() {
+		return outgoing_requests;
 	}
 
 	public boolean amChoked() {

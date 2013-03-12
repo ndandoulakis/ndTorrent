@@ -6,6 +6,7 @@ import java.util.BitSet;
 public final class Piece {
 	static final long ONE_MINUTE = (long) (60 * 1e9);
 
+	private int piece_length;
 	private int num_blocks;
 	private int block_length;
 	private int tail_length;
@@ -21,6 +22,8 @@ public final class Piece {
 
 	public Piece(int piece_length, int block_length) {
 		data = ByteBuffer.allocate(piece_length);
+
+		this.piece_length = piece_length;
 		this.block_length = block_length;
 
 		num_blocks = (piece_length + block_length - 1) / block_length;
@@ -56,6 +59,10 @@ public final class Piece {
 
 	public ByteBuffer getData() {
 		return data;
+	}
+
+	public int getLength() {
+		return piece_length;
 	}
 
 	public int getBlockIndex(int offset) {
@@ -107,6 +114,10 @@ public final class Piece {
 
 	public int numBlocks() {
 		return num_blocks;
+	}
+
+	public BitSet getAvailableBlocks() {
+		return (BitSet) available.clone();
 	}
 
 	public int numAvailableBlocks() {

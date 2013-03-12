@@ -100,6 +100,7 @@ public class Frontend implements StatusObserver {
 		piecesFrame = new TableFrame("Pieces");
 		splitPane_3.setLeftComponent(piecesFrame);
 		piecesFrame.setTableModel(new PiecesModel());
+		piecesFrame.setDefaultRenderer(BarRenderer.class, new BarRenderer());
 
 		connectionsFrame = new TableFrame("Connections");
 		splitPane_3.setRightComponent(connectionsFrame);

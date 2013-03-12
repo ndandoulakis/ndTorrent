@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.TableCellRenderer;
 
+import com.ndtorrent.client.status.PieceInfo;
 import com.ndtorrent.client.status.TorrentInfo;
 
 public class BarRenderer extends JComponent implements TableCellRenderer {
@@ -50,9 +51,14 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 	public Component getTableCellRendererComponent(JTable table, Object value,
 			boolean isSelected, boolean hasFocus, int row, int column) {
 
-		TorrentInfo info = (TorrentInfo) value;
-		setBits(info.getAvailablePieces(), info.numPieces());
-		
+		if (value instanceof TorrentInfo) {
+			TorrentInfo info = (TorrentInfo) value;
+			setBits(info.getAvailablePieces(), info.numPieces());
+		} else if (value instanceof PieceInfo) {
+			PieceInfo info = (PieceInfo) value;
+			setBits(info.getAvailableBlocks(), info.numBlocks());
+		}
+
 		return this;
 	}
 

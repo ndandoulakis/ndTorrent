@@ -10,7 +10,7 @@ public final class PiecesModel extends AbstractTableModel {
 
 	private static final long serialVersionUID = 1L;
 
-	private String[] column_names = { "#", "Completed" };
+	private String[] column_names = { "#", "Size", "Blocks", "Completed" };
 
 	private List<PieceInfo> pieces;
 
@@ -22,6 +22,11 @@ public final class PiecesModel extends AbstractTableModel {
 	@Override
 	public int getRowCount() {
 		return pieces == null ? 0 : pieces.size();
+	}
+
+	@Override
+	public Class<?> getColumnClass(int columnIndex) {
+		return columnIndex != 2 ? Object.class : BarRenderer.class;
 	}
 
 	@Override
@@ -41,11 +46,14 @@ public final class PiecesModel extends AbstractTableModel {
 		case 0:
 			return info.getIndex();
 		case 1:
+			return String.format("%,.1f KB", info.getLength() / 1000.0);
+		case 2:
+			return info;
+		case 3:
 			return String.format("%d/%d", info.numAvailableBlocks(),
 					info.numBlocks());
 		default:
 			return null;
 		}
 	}
-
 }

@@ -1,21 +1,29 @@
 package com.ndtorrent.client.status;
 
+import java.util.BitSet;
+
 import com.ndtorrent.client.Piece;
 
 public final class PieceInfo {
 
 	private final int index;
+	private final int length;
 	private final int num_blocks;
-	private final int num_available;
+	private final BitSet available;
 
 	public PieceInfo(int index, Piece piece) {
 		this.index = index;
+		length = piece.getLength();
 		num_blocks = piece.numBlocks();
-		num_available = piece.numAvailableBlocks();
+		available = piece.getAvailableBlocks();
 	}
 
 	public int getIndex() {
 		return index;
+	}
+
+	public int getLength() {
+		return length;
 	}
 
 	public int numBlocks() {
@@ -23,7 +31,11 @@ public final class PieceInfo {
 	}
 
 	public int numAvailableBlocks() {
-		return num_available;
+		return available.cardinality();
+	}
+
+	public BitSet getAvailableBlocks() {
+		return available;
 	}
 
 }

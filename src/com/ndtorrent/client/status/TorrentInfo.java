@@ -10,12 +10,16 @@ public final class TorrentInfo {
 	private final int num_pieces;
 	private final String name;
 	private final long length;
+	private final double input_rate;
+	private final double output_rate;
 
-	public TorrentInfo(Torrent torrent) {
+	public TorrentInfo(Torrent torrent, double input_rate, double output_rate) {
 		available = torrent.getAvailablePieces();
 		num_pieces = torrent.numPieces();
 		name = torrent.getName();
 		length = torrent.getTotalLength();
+		this.input_rate = input_rate;
+		this.output_rate = output_rate;
 
 	}
 
@@ -33,6 +37,14 @@ public final class TorrentInfo {
 
 	public long getLength() {
 		return length;
+	}
+
+	public double getInputRate() {
+		return input_rate;
+	}
+
+	public double getOutputRate() {
+		return output_rate;
 	}
 
 }

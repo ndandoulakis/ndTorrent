@@ -64,9 +64,6 @@ public final class Peer extends Thread {
 
 	@Override
 	public void run() {
-		System.out.println(meta.getPieceLength());
-		System.out.println(torrent.getTotalLength());
-
 		try {
 			channel_selector = Selector.open();
 			socket_selector = Selector.open();
@@ -99,8 +96,7 @@ public final class Peer extends Thread {
 				requestMoreBlocks();
 
 				// Low priority //
-				// Operations that are performed once per second,
-				// and make use of all keys.
+				// Operations that are performed once per second.
 				long now = System.nanoTime();
 				if (now - last_time < SECOND)
 					continue;
@@ -532,9 +528,19 @@ public final class Peer extends Thread {
 			trackers.add(new TrackerInfo(session));
 		}
 
+		double input_rate = 0;
+		double output_rate = 0;
+		for (PeerChannel channel : getChannels()) {
+			input_rate += channel.socket.inputPerSec();
+			output_rate += channel.socket.outputPerSec();
+		}
+
+		TorrentInfo torrent_info = new TorrentInfo(torrent, input_rate,
+				output_rate);
+
 		String info_hash = meta.getInfoHash();
 		for (StatusObserver o : observers) {
-			o.asyncTorrentStatus(new TorrentInfo(torrent), info_hash);
+			o.asyncTorrentStatus(torrent_info, info_hash);
 			o.asyncTrackers(trackers, info_hash);
 			o.asyncPieces(pieces, info_hash);
 			o.asyncConnections(connections, info_hash);

@@ -10,7 +10,7 @@ public class TorrentsModel extends AbstractTableModel {
 
 	// Status: pieces availability
 	// %: 0.1 (5/488)
-	private String[] column_names = { "Name", "Size", "Status", "%",
+	private String[] column_names = { "Name", "Size", "Status", "Progress",
 			"Dn Speed", "Up Speed" };
 
 	private TorrentInfo torrent;
@@ -50,10 +50,21 @@ public class TorrentsModel extends AbstractTableModel {
 			return String.format("%,.1f KB", info.getLength() / 1000.0);
 		case 2:
 			return info;
-
+		case 3:
+			return getProgressValue(info);
+		case 4:
+			return String.format("%.1f kB/s", info.getInputRate() / 1024.0);
+		case 5:
+			return String.format("%.1f kB/s", info.getOutputRate() / 1024.0);
 		default:
 			return null;
 		}
+	}
+
+	private String getProgressValue(TorrentInfo info) {
+		int num_available = info.getAvailablePieces().cardinality();
+		int num_pieces = info.numPieces();
+		return String.format("%.1f%%", (100.0 * num_available) / num_pieces);
 	}
 
 }

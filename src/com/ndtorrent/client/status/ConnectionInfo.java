@@ -18,6 +18,7 @@ public final class ConnectionInfo {
 	private final boolean is_choked;
 	private final boolean is_interested;
 	private final boolean is_optimistic;
+	private final boolean is_former_optimistic;
 	private final boolean am_snubbed;
 	private final boolean is_initiator = true;
 
@@ -35,6 +36,7 @@ public final class ConnectionInfo {
 		is_choked = channel.isChoked();
 		is_interested = channel.isInterested();
 		is_optimistic = channel.isOptimistic();
+		is_former_optimistic = channel.isFormerOptimistic();
 		am_snubbed = channel.amSnubbed();
 	}
 
@@ -88,6 +90,10 @@ public final class ConnectionInfo {
 
 	public boolean isOptimistic() {
 		return is_optimistic;
+	}
+
+	public boolean isFormerOptimistic() {
+		return is_former_optimistic;
 	}
 
 	public boolean amSnubbed() {

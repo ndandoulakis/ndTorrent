@@ -74,6 +74,8 @@ public final class ConnectionsModel extends AbstractTableModel {
 			builder.append('u');
 		if (info.isOptimistic())
 			builder.append('O');
+		if (info.isFormerOptimistic())
+			builder.append('o');
 		if (info.amSnubbed())
 			builder.append('S');
 		if (info.isInitiator())

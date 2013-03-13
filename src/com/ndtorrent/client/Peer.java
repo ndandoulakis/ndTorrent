@@ -516,6 +516,7 @@ public final class Peer extends Thread {
 
 		BitSet missing = new BitSet(torrent.numPieces());
 		missing.set(0, torrent.numPieces());
+		missing.andNot(torrent.getAvailablePieces());
 		double input_rate = 0;
 		double output_rate = 0;
 		for (PeerChannel channel : channels) {

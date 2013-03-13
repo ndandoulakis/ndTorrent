@@ -119,6 +119,10 @@ public final class PeerChannel {
 		return common.equals(pieces);
 	}
 
+	public BitSet getAvailablePieces() {
+		return available;
+	}
+
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!

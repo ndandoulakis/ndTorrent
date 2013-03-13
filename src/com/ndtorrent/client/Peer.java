@@ -528,15 +528,18 @@ public final class Peer extends Thread {
 			trackers.add(new TrackerInfo(session));
 		}
 
+		BitSet missing = new BitSet(torrent.numPieces());
+		missing.set(0, torrent.numPieces());
 		double input_rate = 0;
 		double output_rate = 0;
 		for (PeerChannel channel : getChannels()) {
 			input_rate += channel.socket.inputPerSec();
 			output_rate += channel.socket.outputPerSec();
+			missing.andNot(channel.getAvailablePieces());
 		}
 
-		TorrentInfo torrent_info = new TorrentInfo(torrent, input_rate,
-				output_rate);
+		TorrentInfo torrent_info = new TorrentInfo(torrent, missing,
+				input_rate, output_rate);
 
 		String info_hash = meta.getInfoHash();
 		for (StatusObserver o : observers) {

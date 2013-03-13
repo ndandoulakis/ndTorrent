@@ -7,14 +7,18 @@ import com.ndtorrent.client.Torrent;
 public final class TorrentInfo {
 
 	private final BitSet available;
+	private final BitSet missing;
 	private final int num_pieces;
 	private final String name;
 	private final long length;
 	private final double input_rate;
 	private final double output_rate;
 
-	public TorrentInfo(Torrent torrent, double input_rate, double output_rate) {
+	public TorrentInfo(Torrent torrent, BitSet missing, double input_rate,
+			double output_rate) {
+
 		available = torrent.getAvailablePieces();
+		this.missing = missing;
 		num_pieces = torrent.numPieces();
 		name = torrent.getName();
 		length = torrent.getTotalLength();
@@ -25,6 +29,10 @@ public final class TorrentInfo {
 
 	public BitSet getAvailablePieces() {
 		return available;
+	}
+
+	public BitSet getMissingPieces() {
+		return missing;
 	}
 
 	public int numPieces() {

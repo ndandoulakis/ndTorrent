@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -33,6 +35,7 @@ public final class Peer extends Thread {
 	private Selector channel_selector;
 	private Selector socket_selector;
 
+	private List<PeerChannel> channels = new LinkedList<PeerChannel>();
 	private List<Session> sessions = new ArrayList<Session>();
 
 	// Expose status through local Data Transfer Object messages.
@@ -160,14 +163,6 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private List<PeerChannel> getChannels() {
-		List<PeerChannel> channels = new ArrayList<PeerChannel>();
-		for (SelectionKey key : channel_selector.keys()) {
-			channels.add((PeerChannel) key.attachment());
-		}
-		return channels;
-	}
-
 	private void processHandshakeMessages() {
 		for (SelectionKey key : socket_selector.selectedKeys()) {
 			if (!key.isValid() || key.isConnectable())
@@ -238,18 +233,17 @@ public final class Peer extends Thread {
 	}
 
 	private void addReadyConnection(BTSocket socket) {
-		if (channel_selector.keys().size() >= MAX_CHANNELS) {
+		if (channels.size() >= MAX_CHANNELS) {
 			socket.close();
 			return;
 		}
 
 		// Multiple connections with same IP are not allowed.
 		String ip = socket.getRemoteIP();
-		for (SelectionKey key : channel_selector.keys()) {
+		for (PeerChannel channel : channels) {
 			// incoming counter
 			// outgoing counter
-			PeerChannel peer = (PeerChannel) key.attachment();
-			if (ip.equals(peer.socket.getRemoteIP())) {
+			if (ip.equals(channel.socket.getRemoteIP())) {
 				socket.close();
 				return;
 			}
@@ -263,6 +257,7 @@ public final class Peer extends Thread {
 
 		try {
 			socket.register(channel_selector, SelectionKey.OP_READ, channel);
+			channels.add(channel);
 			System.out
 					.printf("incoming: %s\n", socket.getRemoteSocketAddress());
 
@@ -286,8 +281,9 @@ public final class Peer extends Thread {
 		// 1. X minutes passed since last time we're interested in them
 		// 2. we're choked for ~45 minutes
 		long now = System.nanoTime();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
+		Iterator<PeerChannel> iter = channels.iterator();
+		while (iter.hasNext()) {
+			PeerChannel channel = iter.next();
 			long last_input = channel.socket.lastInputMessageAt();
 			long last_output = channel.socket.lastOutputMessageAt();
 			boolean expired = now - Math.max(last_input, last_output) > 135 * 1e9;
@@ -296,8 +292,7 @@ public final class Peer extends Thread {
 				// Registered sockets that get closed will eventually be removed
 				// by the selector.
 				channel.socket.close();
-				System.out.printf("%s - REMOVED\n",
-						channel.socket.getInetAddress());
+				iter.remove();
 			}
 		}
 	}
@@ -307,8 +302,7 @@ public final class Peer extends Thread {
 			return;
 
 		BitSet available = torrent.getAvailablePieces();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
+		for (PeerChannel channel : channels) {
 			if (channel.hasPieces(available))
 				channel.socket.close();
 		}
@@ -325,8 +319,7 @@ public final class Peer extends Thread {
 			Piece piece = entry.getValue();
 			int index = entry.getKey();
 			if (now > piece.getTimeout()) {
-				for (SelectionKey key : channel_selector.keys()) {
-					PeerChannel channel = (PeerChannel) key.attachment();
+				for (PeerChannel channel : channels) {
 					if (channel.hasPiece(index)) {
 						// We can call this even if there are no requests.
 						channel.removePendingRequests(index);
@@ -346,8 +339,7 @@ public final class Peer extends Thread {
 			requested.set(0, requested.length(), false);
 			int index = entry.getKey();
 			Piece piece = entry.getValue();
-			for (SelectionKey key : channel_selector.keys()) {
-				PeerChannel channel = (PeerChannel) key.attachment();
+			for (PeerChannel channel : channels) {
 				channel.getRequested(requested, index, piece.getBlockLength());
 			}
 			piece.restoreRequested(requested);
@@ -385,24 +377,22 @@ public final class Peer extends Thread {
 
 	private void advertisePieces() {
 		BitSet available = torrent.getAvailablePieces();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
+		for (PeerChannel channel : channels) {
 			channel.advertise(available);
 		}
 	}
 
 	private void updateAmInterestedState() {
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
+		for (PeerChannel channel : channels) {
 			channel.updateAmInterested();
 		}
 	}
 
 	private void choking() {
 		if (isSeed())
-			Choking.updateAsSeed(getChannels());
+			Choking.updateAsSeed(channels);
 		else
-			Choking.updateAsLeech(getChannels());
+			Choking.updateAsLeech(channels);
 	}
 
 	private void requestMoreBlocks() {
@@ -413,8 +403,7 @@ public final class Peer extends Thread {
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.
 		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
+		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested()
 					|| !channel.canRequestMore())
 				continue;
@@ -456,8 +445,7 @@ public final class Peer extends Thread {
 				if (!unregistered.get(i) || !channel_interested.hasPiece(i))
 					continue;
 				int availability = 0;
-				for (SelectionKey key : channel_selector.keys()) {
-					PeerChannel channel = (PeerChannel) key.attachment();
+				for (PeerChannel channel : channels) {
 					if (!channel.hasPiece(i))
 						continue;
 					if (++availability > min)
@@ -483,8 +471,7 @@ public final class Peer extends Thread {
 
 	private void keepConnectionsAlive() {
 		long now = System.nanoTime();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
+		for (PeerChannel channel : channels) {
 			// If the socket has an outgoing message for more than 60 seconds,
 			// it probably has stalled. In this case we don't add a keep-alive
 			// message.
@@ -512,8 +499,7 @@ public final class Peer extends Thread {
 			return;
 
 		List<ConnectionInfo> connections = new ArrayList<ConnectionInfo>();
-		for (SelectionKey key : channel_selector.keys()) {
-			PeerChannel channel = (PeerChannel) key.attachment();
+		for (PeerChannel channel : channels) {
 			connections.add(new ConnectionInfo(channel));
 		}
 
@@ -532,7 +518,7 @@ public final class Peer extends Thread {
 		missing.set(0, torrent.numPieces());
 		double input_rate = 0;
 		double output_rate = 0;
-		for (PeerChannel channel : getChannels()) {
+		for (PeerChannel channel : channels) {
 			input_rate += channel.socket.inputPerSec();
 			output_rate += channel.socket.outputPerSec();
 			missing.andNot(channel.getAvailablePieces());

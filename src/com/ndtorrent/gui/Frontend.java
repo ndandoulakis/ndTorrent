@@ -83,7 +83,6 @@ public class Frontend implements StatusObserver {
 		torrentsFrame = new TableFrame("Torrents");
 		splitPane_1.setLeftComponent(torrentsFrame);
 		torrentsFrame.setTableModel(new TorrentsModel());
-		torrentsFrame.setDefaultRenderer(BarRenderer.class, new BarRenderer());
 
 		splitPane_2 = new JSplitPane();
 		splitPane_1.setRightComponent(splitPane_2);
@@ -100,7 +99,6 @@ public class Frontend implements StatusObserver {
 		piecesFrame = new TableFrame("Pieces");
 		splitPane_3.setLeftComponent(piecesFrame);
 		piecesFrame.setTableModel(new PiecesModel());
-		piecesFrame.setDefaultRenderer(BarRenderer.class, new BarRenderer());
 
 		connectionsFrame = new TableFrame("Connections");
 		splitPane_3.setRightComponent(connectionsFrame);

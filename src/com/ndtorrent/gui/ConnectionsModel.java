@@ -53,9 +53,9 @@ public final class ConnectionsModel extends AbstractTableModel {
 			return String.format("%d | %d", info.numOutgoingRequests(),
 					info.numIncomingRequests());
 		case 6:
-			return String.format("%,.1f kB", info.getInputTotal() / 1024.0);
+			return String.format("%,.1f KB", info.getInputTotal() / 1000.0);
 		case 7:
-			return String.format("%,.1f kB", info.getOutputTotal() / 1024.0);
+			return String.format("%,.1f KB", info.getOutputTotal() / 1000.0);
 
 		default:
 			return null;

@@ -8,8 +8,6 @@ public class TorrentsModel extends AbstractTableModel {
 
 	private static final long serialVersionUID = 1L;
 
-	// Status: pieces availability
-	// %: 0.1 (5/488)
 	private String[] column_names = { "Name", "Size", "Status", "Progress",
 			"Dn Speed", "Up Speed" };
 

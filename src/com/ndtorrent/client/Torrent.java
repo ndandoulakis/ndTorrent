@@ -141,7 +141,7 @@ public final class Torrent {
 						return;
 					}
 
-					if (!savePiece(index, piece)) {
+					if (!savePiece(piece)) {
 						// error
 						return;
 					}
@@ -152,10 +152,10 @@ public final class Torrent {
 		}
 	}
 
-	private boolean savePiece(int index, Piece piece) {
+	private boolean savePiece(Piece piece) {
 		ByteBuffer data = piece.getData();
 		data.rewind();
-		long piece_offset = index * piece_length;
+		long piece_offset = piece.getIndex() * piece_length;
 		int start = Arrays.binarySearch(files, Long.valueOf(piece_offset));
 		start = Math.max(start, (-start - 1) - 1);
 		for (int i = start; i < files.length; i++) {

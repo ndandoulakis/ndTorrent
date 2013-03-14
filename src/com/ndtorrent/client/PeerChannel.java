@@ -145,13 +145,14 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		}
 	}
 
-	public void addOutgoingRequests(int index, Piece piece) {
+	public void addOutgoingRequests(Piece piece) {
 		BitSet bs = piece.getNotRequested();
 		int start_bit = bs.nextSetBit(0);
 		if (!canRequestMore() || start_bit < 0)
 			return;
 		for (int i = start_bit; i >= 0; i = bs.nextSetBit(i + 1)) {
 			bs.flip(i);
+			int index = piece.getIndex();
 			int offset = piece.getBlockOffset(i);
 			int length = piece.getBlockLength(i);
 			Message m = Message.newBlockRequest(index, offset, length);

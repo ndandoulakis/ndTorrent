@@ -11,8 +11,8 @@ public final class PieceInfo {
 	private final int num_blocks;
 	private final BitSet available;
 
-	public PieceInfo(int index, Piece piece) {
-		this.index = index;
+	public PieceInfo(Piece piece) {
+		index = piece.getIndex();
 		length = piece.getLength();
 		num_blocks = piece.numBlocks();
 		available = piece.getAvailableBlocks();

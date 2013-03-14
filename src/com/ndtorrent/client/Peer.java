@@ -414,7 +414,7 @@ public final class Peer extends Thread {
 					break;
 				int index = piece.getIndex();
 				if (channel.hasPiece(index)) {
-					channel.addOutgoingRequests(index, piece);
+					channel.addOutgoingRequests(piece);
 				}
 			}
 			if (channel.canRequestMore()) {
@@ -507,7 +507,7 @@ public final class Peer extends Thread {
 		List<PieceInfo> pieces = new ArrayList<PieceInfo>();
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (Piece piece : partial_entries) {
-			pieces.add(new PieceInfo(piece.getIndex(), piece));
+			pieces.add(new PieceInfo(piece));
 		}
 
 		List<TrackerInfo> trackers = new ArrayList<TrackerInfo>();

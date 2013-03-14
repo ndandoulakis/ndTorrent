@@ -146,6 +146,15 @@ public final class Message {
 		return new Message(ByteBuffer.wrap(array));
 	}
 
+	public static Message newCancel(int index, int offset, int length) {
+		ByteBuffer data = ByteBuffer.allocate(1 + 3 * 4);
+		data.put(CANCEL);
+		data.putInt(index);
+		data.putInt(offset);
+		data.putInt(length);
+		return new Message(data);
+	}
+
 	public static Message newBlockRequest(int index, int offset, int length) {
 		ByteBuffer data = ByteBuffer.allocate(1 + 3 * 4);
 		data.put(REQUEST);

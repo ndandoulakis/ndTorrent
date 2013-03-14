@@ -4,10 +4,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,7 +34,7 @@ public final class Torrent {
 		num_pieces = sha1_list.length / 20;
 
 		available = new BitSet(num_pieces);
-		// available.set(0, num_pieces / 2); // test
+		// available.set(0, num_pieces); // test
 
 		unregistered = new BitSet(num_pieces);
 		unregistered.set(0, num_pieces);
@@ -101,8 +100,8 @@ public final class Torrent {
 		return (BitSet) available.clone();
 	}
 
-	public Set<Entry<Integer, Piece>> getPartialPieces() {
-		return partial.entrySet();
+	public Collection<Piece> getPartialPieces() {
+		return partial.values();
 	}
 
 	public void registerPiece(int index) {
@@ -114,7 +113,7 @@ public final class Torrent {
 		int length = (index + 1) * piece_length <= total_length ? piece_length
 				: (int) (total_length % piece_length);
 
-		partial.put(index, new Piece(length));
+		partial.put(index, new Piece(index, length));
 		unregistered.flip(index);
 	}
 

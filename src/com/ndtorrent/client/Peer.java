@@ -7,12 +7,11 @@ import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.ndtorrent.client.status.ConnectionInfo;
@@ -313,12 +312,11 @@ public final class Peer extends Thread {
 		// all pending requests are removed when the corresponding
 		// piece has to be updated for more than one minute.
 
-		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
+		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		long now = System.nanoTime();
-		for (Entry<Integer, Piece> entry : partial_entries) {
-			Piece piece = entry.getValue();
-			int index = entry.getKey();
+		for (Piece piece : partial_entries) {
 			if (now > piece.getTimeout()) {
+				int index = piece.getIndex();
 				for (PeerChannel channel : channels) {
 					if (channel.hasPiece(index)) {
 						// We can call this even if there are no requests.
@@ -333,14 +331,14 @@ public final class Peer extends Thread {
 	private void restoreBrokenRequests() {
 		// If a block is flagged as requested but no channel has a corresponding
 		// unfulfilled request, it's considered broken and must be restored.
-		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
+		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		BitSet requested = new BitSet();
-		for (Entry<Integer, Piece> entry : partial_entries) {
+		for (Piece piece : partial_entries) {
 			requested.set(0, requested.length(), false);
-			int index = entry.getKey();
-			Piece piece = entry.getValue();
+			int piece_index = piece.getIndex();
+			int block_length = piece.getBlockLength();
 			for (PeerChannel channel : channels) {
-				channel.getRequested(requested, index, piece.getBlockLength());
+				channel.getRequested(requested, piece_index, block_length);
 			}
 			piece.restoreRequested(requested);
 		}
@@ -399,23 +397,23 @@ public final class Peer extends Thread {
 		if (isSeed())
 			return;
 
+		ArrayList<PeerChannel> channels = new ArrayList<PeerChannel>(
+				this.channels);
 		// TODO sort pieces by creation time
-		// TODO sort channels by blocks total
 
 		// Blocks of the same piece can be requested from different channels.
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.
-		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
+		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested()
 					|| !channel.canRequestMore())
 				continue;
-			for (Entry<Integer, Piece> entry : partial_entries) {
+			for (Piece piece : partial_entries) {
 				if (!channel.canRequestMore())
 					break;
-				int index = entry.getKey();
+				int index = piece.getIndex();
 				if (channel.hasPiece(index)) {
-					Piece piece = entry.getValue();
 					channel.addOutgoingRequests(index, piece);
 				}
 			}
@@ -507,9 +505,9 @@ public final class Peer extends Thread {
 		}
 
 		List<PieceInfo> pieces = new ArrayList<PieceInfo>();
-		Set<Entry<Integer, Piece>> partial_entries = torrent.getPartialPieces();
-		for (Entry<Integer, Piece> entry : partial_entries) {
-			pieces.add(new PieceInfo(entry.getKey(), entry.getValue()));
+		Collection<Piece> partial_entries = torrent.getPartialPieces();
+		for (Piece piece : partial_entries) {
+			pieces.add(new PieceInfo(piece.getIndex(), piece));
 		}
 
 		List<TrackerInfo> trackers = new ArrayList<TrackerInfo>();

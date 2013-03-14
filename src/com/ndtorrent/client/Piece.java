@@ -6,6 +6,7 @@ import java.util.BitSet;
 public final class Piece {
 	static final long ONE_MINUTE = (long) (60 * 1e9);
 
+	private int index;
 	private int piece_length;
 	private int num_blocks;
 	private int block_length;
@@ -16,13 +17,14 @@ public final class Piece {
 	private BitSet notrequested;
 	private long timeout;
 
-	public Piece(int length) {
-		this(length, 16 * 1024);
+	public Piece(int index, int length) {
+		this(index, length, 16 * 1024);
 	}
 
-	public Piece(int piece_length, int block_length) {
+	public Piece(int index, int piece_length, int block_length) {
 		data = ByteBuffer.allocate(piece_length);
 
+		this.index = index;
 		this.piece_length = piece_length;
 		this.block_length = block_length;
 
@@ -59,6 +61,10 @@ public final class Piece {
 
 	public ByteBuffer getData() {
 		return data;
+	}
+
+	public int getIndex() {
+		return index;
 	}
 
 	public int getLength() {

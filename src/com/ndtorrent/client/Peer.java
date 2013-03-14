@@ -106,7 +106,7 @@ public final class Peer extends Thread {
 
 				last_time = now;
 
-				removeDelayedRequests();
+				cancelDelayedRequests();
 				restoreBrokenRequests();
 				// restoreRejectedPieces();
 				advertisePieces();
@@ -308,7 +308,7 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void removeDelayedRequests() {
+	private void cancelDelayedRequests() {
 		// Since it's possible a remote peer to discard any request,
 		// all pending requests are removed when the corresponding
 		// piece has to be updated for more than one minute.
@@ -322,7 +322,7 @@ public final class Peer extends Thread {
 				for (PeerChannel channel : channels) {
 					if (channel.hasPiece(index)) {
 						// We can call this even if there are no requests.
-						channel.removePendingRequests(index);
+						channel.cancelPendingRequests(index);
 					}
 				}
 				piece.resetTimeout();
@@ -398,6 +398,9 @@ public final class Peer extends Thread {
 	private void requestMoreBlocks() {
 		if (isSeed())
 			return;
+
+		// TODO sort pieces by creation time
+		// TODO sort channels by blocks total
 
 		// Blocks of the same piece can be requested from different channels.
 		// The number of channels that will contribute to a particular piece

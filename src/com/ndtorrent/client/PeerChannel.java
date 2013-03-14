@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public final class PeerChannel {
+public final class PeerChannel implements Comparable<PeerChannel> {
 	private static final int MIN_REQUESTS = 2;
 	private static final int MAX_REQUESTS = 255;
 
@@ -44,6 +44,12 @@ public final class PeerChannel {
 
 	// Requests the client has sent.
 	private LinkedList<Message> unfulfilled = new LinkedList<Message>();
+
+	@Override
+	public int compareTo(PeerChannel other) {
+		// Blocks total comparison for descending order, c2 > c1
+		return Long.signum(other.getBlocksTotal() - getBlocksTotal());
+	}
 
 	public int numAvailablePieces() {
 		return available.cardinality();
@@ -126,8 +132,8 @@ public final class PeerChannel {
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
-		final int REQUESTS = 5;
-		return unfulfilled.size() < Math.max(MIN_REQUESTS,
+		final int REQUESTS = 4;
+		return numOutgoingRequests() < Math.max(MIN_REQUESTS,
 				(Math.min(REQUESTS, MAX_REQUESTS)));
 	}
 
@@ -280,12 +286,15 @@ public final class PeerChannel {
 		}
 	}
 
-	public void removePendingRequests(int piece_index) {
+	public void cancelPendingRequests(int piece_index) {
 		Iterator<Message> iter;
 		iter = unfulfilled.iterator();
 		while (iter.hasNext()) {
 			Message m = iter.next();
 			if (m.getPieceIndex() == piece_index) {
+				int offset = m.getBlockBegin();
+				int length = m.getBlockLength();
+				outgoing.add(Message.newCancel(piece_index, offset, length));
 				iter.remove();
 			}
 		}

@@ -2,7 +2,6 @@ package com.ndtorrent.client;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -37,7 +36,9 @@ public final class Choking {
 		if (optimistic + regular >= 4)
 			return;
 
-		sortByBlocksTotal(candidates);
+		// Stable sorting is used, if 2 peers have the same total,
+		// their order remains as is in the list.
+		Collections.sort(candidates);
 
 		final int MAX_SLOTS = 3 + Math.min(optimistic, 1);
 		long now = System.nanoTime();
@@ -187,18 +188,6 @@ public final class Choking {
 		boolean expired = now > channel.getUnchokeEndTime();
 		return !choked && interested && !expired;
 
-	}
-
-	private static void sortByBlocksTotal(List<PeerChannel> channels) {
-		// Since a stable sorting is used, if 2 peers have the same total,
-		// their order remains as is in the list.
-		Collections.sort(channels, new Comparator<PeerChannel>() {
-			@Override
-			public int compare(PeerChannel c1, PeerChannel c2) {
-				// descending order, c2 > c1
-				return Long.signum(c2.getBlocksTotal() - c1.getBlocksTotal());
-			}
-		});
 	}
 
 }

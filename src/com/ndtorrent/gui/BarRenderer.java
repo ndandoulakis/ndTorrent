@@ -24,15 +24,18 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 	private final Color color2 = new Color(0xE3EADA); // OFF
 	private final Color background = new Color(0xFF7563);
 
-	private BufferedImage image;
+	private BufferedImage full_image;
+	private BufferedImage half_image;
 
 	public BarRenderer() {
 		setPreferredSize(new Dimension(0, 50));
 	}
 
 	public void setBits(BitSet bitmap, BitSet mask, int nbits) {
-		if (image == null || image.getWidth() != nbits) {
-			image = new BufferedImage(nbits, 1, BufferedImage.TYPE_INT_RGB);
+		if (full_image == null || full_image.getWidth() != nbits) {
+			full_image = new BufferedImage(nbits, 1, BufferedImage.TYPE_INT_RGB);
+			half_image = new BufferedImage(nbits / 2, 1,
+					BufferedImage.TYPE_INT_RGB);
 		}
 
 		// TODO draw range of bits instead
@@ -42,26 +45,43 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 				c = background;
 			else
 				c = bitmap.get(x) ? color1 : color2;
-			image.setRGB(x, 0, c.getRGB());
+			full_image.setRGB(x, 0, c.getRGB());
 		}
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
-		if (image == null)
+		if (full_image == null)
 			return;
 
 		Dimension size = getSize();
 		int width = size.width;
 		int height = size.height;
 
-		if (width < image.getWidth()) {
+		if (width < half_image.getWidth()) {
+			Graphics2D g2;
+			g2 = half_image.createGraphics();
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+					RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+			g2.drawImage(full_image, 0, 0, half_image.getWidth(), 1, null);
+			g2.dispose();
+
+			g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+					RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+
+			g2.drawImage(half_image, 0, 0, width, height, null);
+
+		} else if (width < full_image.getWidth()) {
 			Graphics2D g2 = (Graphics2D) g;
 			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 					RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		}
 
-		g.drawImage(image, 0, 0, width, height, null);
+			g2.drawImage(full_image, 0, 0, width, height, null);
+
+		} else {
+			g.drawImage(full_image, 0, 0, width, height, null);
+		}
 	}
 
 	@Override

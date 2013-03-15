@@ -94,7 +94,8 @@ public class BarRenderer extends JComponent implements TableCellRenderer {
 					info.numPieces());
 		} else if (value instanceof PieceInfo) {
 			PieceInfo info = (PieceInfo) value;
-			setBits(info.getAvailableBlocks(), null, info.numBlocks());
+			setBits(info.getAvailableBlocks(), info.getRequestedBlocks(),
+					info.numBlocks());
 		}
 
 		return this;

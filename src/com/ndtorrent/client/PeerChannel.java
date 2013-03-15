@@ -12,8 +12,8 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	public BTSocket socket;
 
 	private BitSet available = new BitSet();
-	private BitSet have_advertised = new BitSet();
-	private BitSet participated = new BitSet(); // received Piece indices
+	private BitSet advertised = new BitSet();
+	private BitSet participated = new BitSet(); // Pieces received
 
 	public boolean is_initiator;
 	public boolean is_banned;
@@ -164,18 +164,18 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	}
 
 	public void advertiseBitfield(BitSet pieces, int nbits) {
-		have_advertised = pieces;
-		if (pieces.cardinality() > 0)
-			outgoing.add(Message.newBitfield(pieces, nbits));
+		advertised = pieces;
+		if (advertised.cardinality() > 0)
+			outgoing.add(Message.newBitfield(advertised, nbits));
 	}
 
 	public void advertise(BitSet pieces) {
-		have_advertised.xor(pieces);
-		int start_bit = have_advertised.nextSetBit(0);
-		for (int i = start_bit; i >= 0; i = have_advertised.nextSetBit(i + 1)) {
+		advertised.xor(pieces);
+		int start_bit = advertised.nextSetBit(0);
+		for (int i = start_bit; i >= 0; i = advertised.nextSetBit(i + 1)) {
 			outgoing.add(Message.newHavePiece(i));
 		}
-		have_advertised.or(pieces);
+		advertised.or(pieces);
 	}
 
 	public void setAmSnubbed(boolean snubbed) {
@@ -183,7 +183,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	}
 
 	public boolean amSnubbed() {
-		// If true, it'll clear only as an optimistic unchoke.
+		// If true, it'll clear on optimistic unchoking.
 		return am_snubbed;
 	}
 
@@ -242,7 +242,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 
 	public void updateAmInterested() {
 		BitSet missing = (BitSet) available.clone();
-		missing.andNot(have_advertised);
+		missing.andNot(advertised);
 		boolean be_interested = missing.nextSetBit(0) >= 0;
 		if (am_interested == be_interested)
 			return;

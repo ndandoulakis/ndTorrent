@@ -96,7 +96,6 @@ public final class BTSocket {
 		try {
 			is_input_error = channel.read(input_handshake.getData()) < 0;
 		} catch (IOException e) {
-			e.printStackTrace();
 			is_input_error = true;
 		}
 	}
@@ -107,7 +106,6 @@ public final class BTSocket {
 		try {
 			channel.write(output_handshake.getData());
 		} catch (IOException e) {
-			e.printStackTrace();
 			is_output_error = true;
 		}
 	}
@@ -143,7 +141,6 @@ public final class BTSocket {
 				is_input_error = readInput(input_data) < 0;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 			is_input_error = true;
 			// Can a network outage raise an exception?
 		}
@@ -173,7 +170,6 @@ public final class BTSocket {
 					output_data = null;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 			is_output_error = true;
 		}
 	}

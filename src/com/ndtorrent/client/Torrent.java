@@ -104,17 +104,20 @@ public final class Torrent {
 		return partial.values();
 	}
 
-	public void registerPiece(int index) {
+	public Piece registerPiece(int index) {
 		if (index < 0 || index >= num_pieces)
 			throw new IndexOutOfBoundsException("index: " + index);
-		if (!unregistered.get(index))
-			return;
+		if (!unregistered.get(index)) {
+			return null; // may not be partial
+		}
 
 		int length = (index + 1) * piece_length <= total_length ? piece_length
 				: (int) (total_length % piece_length);
 
-		partial.put(index, new Piece(index, length));
+		Piece p = new Piece(index, length);
+		partial.put(index, p);
 		unregistered.flip(index);
+		return p;
 	}
 
 	public BitSet getUnregistered() {

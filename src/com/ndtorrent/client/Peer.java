@@ -397,17 +397,13 @@ public final class Peer extends Thread {
 		if (isSeed())
 			return;
 
-		ArrayList<PeerChannel> channels = new ArrayList<PeerChannel>(
-				this.channels);
-		// TODO sort pieces by creation time
-
 		// Blocks of the same piece can be requested from different channels.
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.
+
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
-			if (channel.amChoked() || !channel.amInterested()
-					|| !channel.canRequestMore())
+			if (channel.amChoked() || !channel.amInterested())
 				continue;
 			for (Piece piece : partial_entries) {
 				if (!channel.canRequestMore())
@@ -422,6 +418,9 @@ public final class Peer extends Thread {
 				if (index < 0)
 					continue;
 				torrent.registerPiece(index);
+				// Update partial_entries because we might prevent next channels
+				// from registering a new piece, thus avoid piling up pieces.
+				partial_entries = torrent.getPartialPieces();
 			}
 		}
 	}

@@ -400,6 +400,9 @@ public final class Peer extends Thread {
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.
 
+		// If no available pieces, multiple random pieces may be registered.
+		boolean first = !torrent.hasAvailablePieces();
+
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested())
@@ -413,7 +416,8 @@ public final class Peer extends Thread {
 				}
 			}
 			if (channel.canRequestMore()) {
-				int index = selectUnregisteredPiece(channel);
+				int index = first ? selectRandomPiece(channel)
+						: selectRarePiece(channel);
 				if (index < 0)
 					continue;
 				torrent.registerPiece(index);
@@ -424,7 +428,22 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private int selectUnregisteredPiece(PeerChannel channel_interested) {
+	private int selectRandomPiece(PeerChannel channel_interested) {
+		BitSet unregistered = torrent.getUnregistered();
+		BitSet available = channel_interested.getAvailablePieces();
+		int index = -1;
+		int nmatch = 0;
+		int start_bit = available.nextSetBit(0);
+		for (int i = start_bit; i >= 0; i = available.nextSetBit(i + 1)) {
+			if (!unregistered.get(i))
+				continue;
+			if (Math.floor(Math.random() * ++nmatch) == 0)
+				index = i;
+		}
+		return index;
+	}
+
+	private int selectRarePiece(PeerChannel channel_interested) {
 		// The list of pieces is partitioned in 10 overlapped segments,
 		// which are traversed in random order. From the first segment
 		// with available pieces the least common piece is selected.

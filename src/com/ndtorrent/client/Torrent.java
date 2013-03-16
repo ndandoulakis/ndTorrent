@@ -92,6 +92,10 @@ public final class Torrent {
 		return num_pieces;
 	}
 
+	public boolean hasAvailablePieces() {
+		return available.nextSetBit(0) >= 0;
+	}
+
 	public int numAvailablePieces() {
 		return available.cardinality();
 	}

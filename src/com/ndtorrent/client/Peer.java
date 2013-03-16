@@ -251,8 +251,7 @@ public final class Peer extends Thread {
 		PeerChannel channel = new PeerChannel();
 		channel.socket = socket;
 		channel.is_initiator = true; // local_port != torrent_port
-		channel.advertiseBitfield(torrent.getAvailablePieces(),
-				torrent.numPieces());
+		channel.addBitfield(torrent.getAvailablePieces(), torrent.numPieces());
 
 		try {
 			socket.register(channel_selector, SelectionKey.OP_READ, channel);
@@ -475,7 +474,6 @@ public final class Peer extends Thread {
 			// If the socket has an outgoing message for more than 60 seconds,
 			// it probably has stalled. In this case we don't add a keep-alive
 			// message.
-			// TODO? BTSocket.hasStalled(): hasOutput && upload_rate==0
 			if (now - channel.socket.lastOutputMessageAt() > 60 * 1e9
 					&& !channel.socket.hasOutputMessage()) {
 				channel.addKeepAlive();

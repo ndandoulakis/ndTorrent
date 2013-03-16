@@ -163,7 +163,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		}
 	}
 
-	public void advertiseBitfield(BitSet pieces, int nbits) {
+	public void addBitfield(BitSet pieces, int nbits) {
 		advertised = pieces;
 		if (advertised.cardinality() > 0)
 			outgoing.add(Message.newBitfield(advertised, nbits));

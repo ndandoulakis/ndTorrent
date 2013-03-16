@@ -8,6 +8,8 @@ public final class TransferRate {
 	private double rate;
 
 	public void update(double amount) {
+		// Frequent updating makes the rate smoother.
+
 		long now = System.nanoTime();
 		long interval = now - last_time;
 

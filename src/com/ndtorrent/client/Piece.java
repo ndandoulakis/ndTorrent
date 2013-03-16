@@ -15,6 +15,8 @@ public final class Piece {
 	private ByteBuffer data;
 	private BitSet available;
 	private BitSet notrequested;
+
+	private int mode;
 	private long timeout;
 
 	public Piece(int index, int length) {
@@ -97,9 +99,20 @@ public final class Piece {
 		return false;
 	}
 
+	public void setSpeedMode(int mode) {
+		this.mode = mode;
+	}
+
+	public int getSpeedMode() {
+		return mode;
+	}
+
 	public void resetTimeout() {
 		long now = System.nanoTime();
-		timeout = now + ONE_MINUTE;
+		if (mode == 2)
+			timeout = now + ONE_MINUTE / 3;
+		else
+			timeout = now + ONE_MINUTE;
 	}
 
 	public long getTimeout() {

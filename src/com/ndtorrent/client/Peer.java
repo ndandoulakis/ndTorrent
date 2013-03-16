@@ -322,6 +322,7 @@ public final class Peer extends Thread {
 						channel.cancelPendingRequests(index);
 					}
 				}
+				piece.setSpeedMode(0);
 				piece.resetTimeout();
 			}
 		}
@@ -407,11 +408,18 @@ public final class Peer extends Thread {
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested())
 				continue;
+			// Speed mode helps to keep the number of registered pieces low
+			// (piling up) by preventing the mix of slow and fast requests.
+			int mode = channel.isSlow() ? 1 : 2;
 			for (Piece piece : partial_entries) {
 				if (!channel.canRequestMore())
 					break;
 				int index = piece.getIndex();
 				if (channel.hasPiece(index)) {
+					if (piece.getSpeedMode() == 0)
+						piece.setSpeedMode(mode);
+					else if (piece.getSpeedMode() != mode)
+						continue;
 					channel.addOutgoingRequests(piece);
 				}
 			}

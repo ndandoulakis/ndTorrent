@@ -10,7 +10,8 @@ public final class PiecesModel extends AbstractTableModel {
 
 	private static final long serialVersionUID = 1L;
 
-	private String[] column_names = { "#", "Size", "Blocks", "Completed" };
+	private String[] column_names = { "#", "Size", "Blocks", "Completed",
+			"Mode" };
 
 	private List<PieceInfo> pieces;
 
@@ -52,8 +53,20 @@ public final class PiecesModel extends AbstractTableModel {
 		case 3:
 			return String.format("%d/%d", info.numAvailableBlocks(),
 					info.numBlocks());
+		case 4:
+			return getSpeedModeValue(info);
 		default:
 			return null;
 		}
+	}
+
+	private String getSpeedModeValue(PieceInfo info) {
+		int mode = info.getSpeedMode();
+		if (mode == 2)
+			return "fast";
+		else if (mode == 1)
+			return "slow";
+		else
+			return null;
 	}
 }

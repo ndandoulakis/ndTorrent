@@ -401,14 +401,14 @@ public final class Peer extends Thread {
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.
 
-		// If no available pieces, multiple random pieces may be registered.
-		boolean first = !torrent.hasAvailablePieces();
+		// When we begin downloading, multiple random pieces may be selected.
+		boolean begin = !torrent.hasAvailablePieces();
 
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested())
 				continue;
-			// Speed mode helps to keep the number of registered pieces low
+			// Speed mode helps to keep the number of partial pieces low
 			// (piling up) by preventing the mix of slow and fast requests.
 			int mode = channel.isSlow() ? 1 : 2;
 			for (Piece piece : partial_entries) {
@@ -424,13 +424,13 @@ public final class Peer extends Thread {
 				}
 			}
 			if (channel.canRequestMore()) {
-				int index = first ? selectRandomPiece(channel)
+				int index = begin ? selectRandomPiece(channel)
 						: selectRarePiece(channel);
 				if (index < 0)
 					continue;
 				torrent.registerPiece(index);
 				// Update partial_entries because we might prevent next channels
-				// from registering a new piece, thus avoid piling up pieces.
+				// from selecting a new piece, thus avoid piling up pieces.
 				partial_entries = torrent.getPartialPieces();
 			}
 		}

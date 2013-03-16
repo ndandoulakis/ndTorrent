@@ -135,8 +135,8 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
-		final int REQUESTS = isSlow()? 1 : 4;
-		return numOutgoingRequests() < REQUESTS;
+		final int REQUESTS = 1 + (int) (getBlocksTotal() / (15 * 8000));
+		return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
 	}
 
 	public void getRequested(BitSet requested, int piece_index, int block_length) {

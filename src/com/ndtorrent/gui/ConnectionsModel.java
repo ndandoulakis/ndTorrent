@@ -46,20 +46,42 @@ public final class ConnectionsModel extends AbstractTableModel {
 		case 2:
 			return getFlagsValue(info);
 		case 3:
-			return String.format("%.1f kB/s", info.getInputRate() / 1024.0);
+			return getFormattedRate(info.getInputRate());
 		case 4:
-			return String.format("%.1f kB/s", info.getOutputRate() / 1024.0);
+			return getFormattedRate(info.getOutputRate());
 		case 5:
-			return String.format("%d | %d", info.numOutgoingRequests(),
-					info.numIncomingRequests());
+			return getFormattedRequests(info);
 		case 6:
-			return String.format("%,.1f KB", info.getInputTotal() / 1000.0);
+			return getFormattedTotal(info.getInputTotal());
 		case 7:
-			return String.format("%,.1f KB", info.getOutputTotal() / 1000.0);
+			return getFormattedTotal(info.getOutputTotal());
 
 		default:
 			return null;
 		}
+	}
+
+	private String getFormattedRate(double rate) {
+		if (rate < 100)
+			return null;
+		else
+			return String.format("%.1f KB/s", rate / 1000.0);
+	}
+
+	private String getFormattedTotal(double total) {
+		if (total < 100)
+			return null;
+		else
+			return String.format("%,.1f KB", total / 1000.0);
+	}
+
+	private String getFormattedRequests(ConnectionInfo info) {
+		int reqs_in = info.numIncomingRequests();
+		int reqs_out = info.numOutgoingRequests();
+		if (reqs_in == 0 && reqs_out == 0)
+			return null;
+		else
+			return String.format("%d | %d", reqs_out, reqs_in);
 	}
 
 	private String getFlagsValue(ConnectionInfo info) {

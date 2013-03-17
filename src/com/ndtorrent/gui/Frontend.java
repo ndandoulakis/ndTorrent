@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JSplitPane;
+import javax.swing.JSeparator;
 
 public class Frontend implements StatusObserver {
 
@@ -32,6 +33,8 @@ public class Frontend implements StatusObserver {
 	private JSplitPane splitPane_1;
 	private JSplitPane splitPane_2;
 	private JSplitPane splitPane_3;
+	private Statistics stats;
+	private JSeparator separator;
 
 	/**
 	 * Launch the application.
@@ -104,6 +107,12 @@ public class Frontend implements StatusObserver {
 		splitPane_3.setRightComponent(connectionsFrame);
 		connectionsFrame.setTableModel(new ConnectionsModel());
 
+		separator = new JSeparator();
+		frmNdtorrentAlpha.getContentPane().add(separator);
+
+		stats = new Statistics();
+		frmNdtorrentAlpha.getContentPane().add(stats);
+
 		client.setServerPort(Client.DEFAULT_PORT);
 
 		String info_hash = client.addTorrent("test.torrent");
@@ -155,6 +164,8 @@ public class Frontend implements StatusObserver {
 				// if (!observing(info_hash)) return;
 				((TorrentsModel) torrentsFrame.getTableModel())
 						.setTorrent(torrent);
+
+				stats.addInputRate(torrent.getInputRate());
 			}
 		});
 	}

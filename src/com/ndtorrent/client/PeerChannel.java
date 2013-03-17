@@ -47,7 +47,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	@Override
 	public int compareTo(PeerChannel other) {
 		// Blocks total comparison for descending order, c2 > c1
-		return Long.signum(other.getBlocksTotal() - getBlocksTotal());
+		return (int) Math.signum(other.getBlocksTotal() - getBlocksTotal());
 	}
 
 	public int numAvailablePieces() {
@@ -68,7 +68,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		socket.clearBlocksInputTotal();
 	}
 
-	public long getBlocksTotal() {
+	public double getBlocksTotal() {
 		return blocks_total.getTotal();
 	}
 

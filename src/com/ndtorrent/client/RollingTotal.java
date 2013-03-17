@@ -9,13 +9,13 @@ public final class RollingTotal {
 	private long last_sec = System.nanoTime() / SECOND;
 
 	// A bucket holds an amount for a certain second.
-	private long[] buckets = new long[NBUCKETS];
+	private double[] buckets = new double[NBUCKETS];
 
 	// The object needs NBUCKETS seconds of lifetime in order to
 	// reflect an accurate rolling total.
-	private long total;
+	private double total;
 
-	public void add(long amount) {
+	public void add(double amount) {
 		// To keep the rolling total in sync with the clock,
 		// always call roll() before adding a new amount.
 
@@ -34,7 +34,7 @@ public final class RollingTotal {
 				buckets[i] = 0;
 			}
 			total = 0;
-			for (long a : buckets) {
+			for (double a : buckets) {
 				total += a;
 			}
 		}
@@ -42,7 +42,7 @@ public final class RollingTotal {
 		last_sec = sec;
 	}
 
-	public long getTotal() {
+	public double getTotal() {
 		return total;
 	}
 

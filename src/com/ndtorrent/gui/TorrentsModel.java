@@ -51,9 +51,9 @@ public class TorrentsModel extends AbstractTableModel {
 		case 3:
 			return getProgressValue(info);
 		case 4:
-			return String.format("%.1f kB/s", info.getInputRate() / 1024.0);
+			return String.format("%.1f KB/s", info.getInputRate() / 1000.0);
 		case 5:
-			return String.format("%.1f kB/s", info.getOutputRate() / 1024.0);
+			return String.format("%.1f KB/s", info.getOutputRate() / 1000.0);
 		default:
 			return null;
 		}

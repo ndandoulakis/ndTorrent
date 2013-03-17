@@ -179,8 +179,8 @@ public final class Torrent {
 	}
 
 	public Message loadBlock(Message request) {
-		// The torrent must has the corresponding piece, otherwise the request
-		// will be discarded.
+		// The corresponding piece must be available, otherwise the
+		// request will be discarded.
 		final int index = request.getPieceIndex();
 		if (!available.get(index))
 			return null;

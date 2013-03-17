@@ -62,14 +62,14 @@ public final class ConnectionsModel extends AbstractTableModel {
 	}
 
 	private String getFormattedRate(double rate) {
-		if (rate < 100)
+		if (rate < 50)
 			return null;
 		else
 			return String.format("%.1f KB/s", rate / 1000.0);
 	}
 
 	private String getFormattedTotal(double total) {
-		if (total < 100)
+		if (total < 50)
 			return null;
 		else
 			return String.format("%,.1f KB", total / 1000.0);

@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+import com.ndtorrent.client.Piece;
 import com.ndtorrent.client.status.PieceInfo;
 
 public final class PiecesModel extends AbstractTableModel {
@@ -62,9 +63,9 @@ public final class PiecesModel extends AbstractTableModel {
 
 	private String getSpeedModeValue(PieceInfo info) {
 		int mode = info.getSpeedMode();
-		if (mode == 2)
+		if (mode == Piece.SPEED_MODE_FAST)
 			return "fast";
-		else if (mode == 1)
+		else if (mode == Piece.SPEED_MODE_SLOW)
 			return "slow";
 		else
 			return null;

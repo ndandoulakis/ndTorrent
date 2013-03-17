@@ -323,7 +323,7 @@ public final class Peer extends Thread {
 						channel.cancelPendingRequests(index);
 					}
 				}
-				piece.setSpeedMode(0);
+				piece.setSpeedMode(Piece.SPEED_MODE_NONE);
 				piece.resetTimeout();
 			}
 		}
@@ -418,13 +418,14 @@ public final class Peer extends Thread {
 				continue;
 			// Speed mode helps to keep the number of partial pieces low
 			// (piling up) by preventing the mix of slow and fast requests.
-			int mode = channel.isSlow() ? 1 : 2;
+			int mode = channel.isSlow() ? Piece.SPEED_MODE_SLOW
+					: Piece.SPEED_MODE_FAST;
 			for (Piece piece : partial_entries) {
 				if (!channel.canRequestMore())
 					break;
 				int index = piece.getIndex();
 				if (channel.hasPiece(index)) {
-					if (piece.getSpeedMode() == 0)
+					if (piece.getSpeedMode() == Piece.SPEED_MODE_NONE)
 						piece.setSpeedMode(mode);
 					else if (piece.getSpeedMode() != mode)
 						continue;
@@ -437,8 +438,8 @@ public final class Peer extends Thread {
 				if (index < 0)
 					continue;
 				torrent.registerPiece(index);
-				// Update partial_entries because we might prevent next channels
-				// from selecting a new piece, thus avoid piling up pieces.
+				// Update partial_entries and possibly prevent next channels
+				// from selecting a new piece, thus to avoid piling up pieces.
 				partial_entries = torrent.getPartialPieces();
 			}
 		}

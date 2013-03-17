@@ -4,6 +4,10 @@ import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 public final class Piece {
+	public static final int SPEED_MODE_NONE = 0;
+	public static final int SPEED_MODE_SLOW = 1;
+	public static final int SPEED_MODE_FAST = 2;
+
 	static final long ONE_MINUTE = (long) (60 * 1e9);
 
 	private int index;
@@ -109,7 +113,7 @@ public final class Piece {
 
 	public void resetTimeout() {
 		long now = System.nanoTime();
-		if (mode == 2)
+		if (mode == SPEED_MODE_FAST)
 			timeout = now + ONE_MINUTE / 3;
 		else
 			timeout = now + ONE_MINUTE;

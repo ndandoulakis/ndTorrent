@@ -108,8 +108,9 @@ public final class Peer extends Thread {
 				cancelDelayedRequests();
 				restoreBrokenRequests();
 				// restoreRejectedPieces();
-				advertisePieces();
+				advertiseAvailablePieces();
 				updateAmInterestedState();
+				rollBlocksTotal();
 				choking();
 				removeFellowSeeders();
 				// update input/output totals
@@ -308,8 +309,8 @@ public final class Peer extends Thread {
 
 	private void cancelDelayedRequests() {
 		// Since it's possible a remote peer to discard any request,
-		// all pending requests are removed when the corresponding
-		// piece has to be updated for more than one minute.
+		// all pending requests are canceled when the corresponding
+		// piece is timed out.
 
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		long now = System.nanoTime();
@@ -373,7 +374,7 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void advertisePieces() {
+	private void advertiseAvailablePieces() {
 		BitSet available = torrent.getAvailablePieces();
 		for (PeerChannel channel : channels) {
 			channel.advertise(available);
@@ -383,6 +384,13 @@ public final class Peer extends Thread {
 	private void updateAmInterestedState() {
 		for (PeerChannel channel : channels) {
 			channel.updateAmInterested();
+		}
+	}
+
+	private void rollBlocksTotal() {
+		long now = System.nanoTime();
+		for (PeerChannel channel : channels) {
+			channel.rollBlocksTotal(now);
 		}
 	}
 

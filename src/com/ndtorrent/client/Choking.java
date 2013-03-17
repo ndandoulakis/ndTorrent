@@ -8,23 +8,15 @@ import java.util.List;
 public final class Choking {
 
 	public static void updateAsLeech(List<PeerChannel> channels) {
-		rollBlocksTotal(channels);
 		regularLeechUpdate(channels);
 		optimisticUpdate(channels);
 		// TODO ANTI-SNUBBING
 	}
 
 	public static void updateAsSeed(List<PeerChannel> channels) {
-		// As a seed, rolling totals and ANTI-SNUBBING aren't needed.
+		// As a seed, ANTI-SNUBBING isn't needed.
 		regularSeedUpdate(channels);
 		// optimisticUpdate(channels);
-	}
-
-	private static void rollBlocksTotal(List<PeerChannel> channels) {
-		long now = System.nanoTime();
-		for (PeerChannel channel : channels) {
-			channel.rollBlocksTotal(now);
-		}
 	}
 
 	private static void regularLeechUpdate(List<PeerChannel> channels) {

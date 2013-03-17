@@ -6,6 +6,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 public final class PeerChannel implements Comparable<PeerChannel> {
+	// A rolling total longer than the choking round can make the
+	// rating a bit more accurate due to data transmission delays.
+	private static final int ROLLING_SECS = 15;
 	private static final int MAX_REQUESTS = 255;
 
 	public BTSocket socket;
@@ -29,7 +32,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 
 	// Reciprocation round
 	private long unchoke_end_time;
-	private RollingTotal blocks_total = new RollingTotal();
+	private RollingTotal blocks_total = new RollingTotal(ROLLING_SECS);
 
 	private LinkedList<Message> incoming = new LinkedList<Message>();
 	private LinkedList<Message> outgoing = new LinkedList<Message>();

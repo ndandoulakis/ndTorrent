@@ -1,19 +1,20 @@
 package com.ndtorrent.client;
 
 public final class RollingTotal {
-	// A rolling total longer than the choking round can make the
-	// rating a bit more accurate due to data transmission delays.
-	private static final int NBUCKETS = 15;
 	private static final long SECOND = (long) 1e9;
 
 	private long last_sec = System.nanoTime() / SECOND;
 
-	// A bucket holds an amount for a certain second.
-	private double[] buckets = new double[NBUCKETS];
+	private double[] buckets;
 
-	// The object needs NBUCKETS seconds of lifetime in order to
+	// The object needs BUCKETS length seconds of lifetime in order to
 	// reflect an accurate rolling total.
 	private double total;
+
+	public RollingTotal(int nbuckets) {
+		// A bucket holds an amount for a certain second.
+		buckets = new double[nbuckets];
+	}
 
 	public void add(double amount) {
 		// To keep the rolling total in sync with the clock,
@@ -44,6 +45,10 @@ public final class RollingTotal {
 
 	public double getTotal() {
 		return total;
+	}
+
+	public double[] array() {
+		return buckets;
 	}
 
 }

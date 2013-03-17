@@ -166,6 +166,7 @@ public class Frontend implements StatusObserver {
 						.setTorrent(torrent);
 
 				stats.addInputRate(torrent.getInputRate());
+				stats.addOutputRate(torrent.getOutputRate());
 			}
 		});
 	}

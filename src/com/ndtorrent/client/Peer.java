@@ -127,7 +127,7 @@ public final class Peer extends Thread {
 			}
 		}
 
-		closeAllChannels();
+		removeAllChannels();
 		try {
 			channel_selector.close();
 			socket_selector.close();
@@ -136,12 +136,6 @@ public final class Peer extends Thread {
 			e.printStackTrace();
 		}
 
-	}
-
-	private void closeAllChannels() {
-		for (PeerChannel channel : channels) {
-			channel.socket.close();
-		}
 	}
 
 	private void updateTrackerSessions() {
@@ -273,6 +267,26 @@ public final class Peer extends Thread {
 		}
 	}
 
+	private void processIncomingMessages() {
+		for (SelectionKey key : channel_selector.selectedKeys()) {
+			if (!key.isValid() || !key.isReadable())
+				continue;
+			PeerChannel channel = (PeerChannel) key.attachment();
+			channel.processIncomingMessages();
+			while (channel.hasUnprocessedIncoming()) {
+				Message m = channel.takeUnprocessedIncoming();
+				if (m.isPiece())
+					torrent.saveBlock(m);
+				else if (m.isBlockRequest())
+					channel.addPiece(torrent.loadBlock(m));
+				else {
+					channel.socket.close();
+					break;
+				}
+			}
+		}
+	}
+
 	private void processOutgoingMessages() {
 		for (SelectionKey key : channel_selector.selectedKeys()) {
 			if (!key.isValid() || !key.isWritable())
@@ -280,6 +294,13 @@ public final class Peer extends Thread {
 			PeerChannel channel = (PeerChannel) key.attachment();
 			channel.processOutgoingMessages();
 		}
+	}
+
+	private void removeAllChannels() {
+		for (PeerChannel channel : channels) {
+			channel.socket.close();
+		}
+		channels.clear();
 	}
 
 	private void removeBrokenChannels() {
@@ -361,24 +382,6 @@ public final class Peer extends Thread {
 		// Give priority to peers not yet collaborated
 		// Doesn't matter if the list gets empty. It'll filled up again
 		// through the peer tracking phase, and with the incoming connections.
-	}
-
-	private void processIncomingMessages() {
-		for (SelectionKey key : channel_selector.selectedKeys()) {
-			if (!key.isValid() || !key.isReadable())
-				continue;
-			PeerChannel channel = (PeerChannel) key.attachment();
-			channel.processIncomingMessages();
-			while (channel.hasUnprocessedIncoming()) {
-				Message m = channel.takeUnprocessedIncoming();
-				if (m.isPiece())
-					torrent.saveBlock(m);
-				else if (m.isBlockRequest())
-					channel.addPiece(torrent.loadBlock(m));
-				else
-					channel.socket.close();
-			}
-		}
 	}
 
 	private void advertiseAvailablePieces() {

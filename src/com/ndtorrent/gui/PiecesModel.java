@@ -63,8 +63,11 @@ public final class PiecesModel extends AbstractTableModel {
 
 	private String getSpeedModeValue(PieceInfo info) {
 		int mode = info.getSpeedMode();
+
 		if (mode == Piece.SPEED_MODE_FAST)
 			return "fast";
+		else if (mode == Piece.SPEED_MODE_MEDIUM)
+			return "medium";
 		else if (mode == Piece.SPEED_MODE_SLOW)
 			return "slow";
 		else

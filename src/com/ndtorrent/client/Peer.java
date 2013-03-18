@@ -127,6 +127,7 @@ public final class Peer extends Thread {
 			}
 		}
 
+		closeAllChannels();
 		try {
 			channel_selector.close();
 			socket_selector.close();
@@ -135,6 +136,12 @@ public final class Peer extends Thread {
 			e.printStackTrace();
 		}
 
+	}
+
+	private void closeAllChannels() {
+		for (PeerChannel channel : channels) {
+			channel.socket.close();
+		}
 	}
 
 	private void updateTrackerSessions() {
@@ -417,17 +424,21 @@ public final class Peer extends Thread {
 			if (channel.amChoked() || !channel.amInterested())
 				continue;
 			// Speed mode helps to keep the number of partial pieces low
-			// (piling up) by preventing the mix of slow and fast requests.
-			int mode = channel.isSlow() ? Piece.SPEED_MODE_SLOW
-					: Piece.SPEED_MODE_FAST;
+			// (piling up) by preventing the mix of SLOW and FAST requests.
+			// MEDIUM channels are allowed to contribute to SLOW pieces and
+			// MEDIUM pieces can accept requests from the FAST channels.
+			int channel_mode = channel.getSpeedMode();
 			for (Piece piece : partial_entries) {
 				if (!channel.canRequestMore())
 					break;
 				int index = piece.getIndex();
 				if (channel.hasPiece(index)) {
-					if (piece.getSpeedMode() == Piece.SPEED_MODE_NONE)
-						piece.setSpeedMode(mode);
-					else if (piece.getSpeedMode() != mode)
+					int piece_mode = piece.getSpeedMode();
+					if (piece_mode == Piece.SPEED_MODE_NONE)
+						piece.setSpeedMode(channel_mode);
+					else if (piece_mode != channel_mode
+							&& !(piece_mode == Piece.SPEED_MODE_SLOW && channel_mode == Piece.SPEED_MODE_MEDIUM)
+							&& !(piece_mode == Piece.SPEED_MODE_MEDIUM && channel_mode == Piece.SPEED_MODE_FAST))
 						continue;
 					channel.addOutgoingRequests(piece);
 				}

@@ -5,8 +5,9 @@ import java.util.BitSet;
 
 public final class Piece {
 	public static final int SPEED_MODE_NONE = 0;
-	public static final int SPEED_MODE_SLOW = 1;
-	public static final int SPEED_MODE_FAST = 2;
+	public static final int SPEED_MODE_FAST = 1;
+	public static final int SPEED_MODE_MEDIUM = 2;
+	public static final int SPEED_MODE_SLOW = 3;
 
 	static final long ONE_MINUTE = (long) (60 * 1e9);
 

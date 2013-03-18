@@ -75,8 +75,13 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		return blocks_total.getTotal();
 	}
 
-	public boolean isSlow() {
-		return getBlocksTotal() < 15 * 12000;
+	public int getSpeedMode() {
+		double total = getBlocksTotal();
+		if (total < ROLLING_SECS * 4000)
+			return Piece.SPEED_MODE_SLOW;
+		if (total < ROLLING_SECS * 32000)
+			return Piece.SPEED_MODE_MEDIUM;
+		return Piece.SPEED_MODE_FAST;
 	}
 
 	public void processIncomingMessages() {

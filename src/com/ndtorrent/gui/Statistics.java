@@ -2,7 +2,9 @@ package com.ndtorrent.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.geom.Rectangle2D;
 
 import javax.swing.JComponent;
 
@@ -14,7 +16,7 @@ public final class Statistics extends JComponent {
 
 	// TODO use a timer to repaint
 
-	private Color background = new Color(0xE3EADA);
+	private Color bg_color = new Color(0xE3EADA);
 	private Color color1 = new Color(0xFF8800);
 	private Color color2 = new Color(0x1F8800);
 	private Color color3 = new Color(0x8B8E87);
@@ -44,7 +46,7 @@ public final class Statistics extends JComponent {
 
 	@Override
 	public void paintComponent(Graphics g) {
-		g.setColor(background);
+		g.setColor(bg_color);
 		g.fillRect(0, 0, getWidth(), getHeight());
 
 		double max_rate = Math.max(maxRate(input_rate), maxRate(output_rate));
@@ -55,8 +57,19 @@ public final class Statistics extends JComponent {
 		g.setColor(color2);
 		drawRate(g, input_rate, max_rate);
 
+		drawString(g, String.format("%,.1f", max_rate / 1000), 2, 12);
+	}
+
+	private void drawString(Graphics g, String s, int x, int y) {
+		FontMetrics fm = g.getFontMetrics();
+		Rectangle2D rect = fm.getStringBounds(s, g);
+
+		g.setColor(bg_color);
+		g.fillRect(x, y - fm.getAscent(), (int) rect.getWidth(),
+				(int) rect.getHeight());
+
 		g.setColor(color3);
-		g.drawString(String.format("%,.1f", max_rate / 1000), 2, 12);
+		g.drawString(s, x, y);
 	}
 
 	private void drawRate(Graphics g, RollingTotal rate, double max_rate) {

@@ -322,7 +322,7 @@ public final class Peer extends Thread {
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		long now = System.nanoTime();
 		for (Piece piece : partial_entries) {
-			if (now > piece.getTimeout()) {
+			if (now > piece.getSpeedModeTimeout()) {
 				int index = piece.getIndex();
 				for (PeerChannel channel : channels) {
 					if (channel.hasPiece(index)) {
@@ -331,7 +331,7 @@ public final class Peer extends Thread {
 					}
 				}
 				piece.setSpeedMode(Piece.SPEED_MODE_NONE);
-				piece.resetTimeout();
+				piece.resetSpeedModeTimeout();
 			}
 		}
 	}

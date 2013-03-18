@@ -22,7 +22,7 @@ public final class Piece {
 	private BitSet notrequested;
 
 	private int mode;
-	private long timeout;
+	private long mode_timeout;
 
 	public Piece(int index, int length) {
 		this(index, length, 16 * 1024);
@@ -44,7 +44,7 @@ public final class Piece {
 		if (piece_length != 0 && tail_length == 0)
 			tail_length = block_length;
 
-		resetTimeout();
+		resetSpeedModeTimeout();
 	}
 
 	public boolean isValid(/* expected_sha1 */) {
@@ -112,16 +112,16 @@ public final class Piece {
 		return mode;
 	}
 
-	public void resetTimeout() {
+	public void resetSpeedModeTimeout() {
 		long now = System.nanoTime();
 		if (mode == SPEED_MODE_FAST)
-			timeout = now + ONE_MINUTE / 3;
+			mode_timeout = now + ONE_MINUTE / 3;
 		else
-			timeout = now + ONE_MINUTE;
+			mode_timeout = now + ONE_MINUTE;
 	}
 
-	public long getTimeout() {
-		return timeout;
+	public long getSpeedModeTimeout() {
+		return mode_timeout;
 	}
 
 	public void write(Message block) {
@@ -133,7 +133,7 @@ public final class Piece {
 		data.position(offset);
 		data.put(block.getData().array(), 1 + 2 * 4, length);
 		available.set(getBlockIndex(offset), true);
-		resetTimeout();
+		resetSpeedModeTimeout();
 	}
 
 	public int numBlocks() {

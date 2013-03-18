@@ -72,7 +72,9 @@ public final class Torrent {
 		if (writer != null)
 			writer.shutdownNow();
 
-		// TODO close files
+		for (BTFile f : files) {
+			f.close();
+		}
 	}
 
 	public long getRemainingLength() {

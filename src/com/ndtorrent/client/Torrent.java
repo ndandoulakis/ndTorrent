@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 public final class Torrent {
 	private String name;
 	private int piece_length;
+	private int tail_length;
 	private long total_length;
 	private String parent_path;
 	private BTFile[] files;
@@ -54,6 +55,11 @@ public final class Torrent {
 		for (BTFile f : files) {
 			total_length += f.getLength();
 		}
+
+		tail_length = (int) (total_length % piece_length);
+		if (total_length != 0 && tail_length == 0)
+			tail_length = piece_length;
+
 	}
 
 	public void open() throws IOException {
@@ -78,8 +84,14 @@ public final class Torrent {
 	}
 
 	public long getRemainingLength() {
-		// TODO sum unregistered subtract partial
-		return total_length;
+		long remaining = total_length;
+		int start_bit = available.nextSetBit(0);
+		for (int i = start_bit; i >= 0; i = available.nextSetBit(i + 1)) {
+			remaining -= piece_length;
+		}
+		if (available.get(num_pieces - 1))
+			remaining += piece_length - tail_length;
+		return remaining;
 	}
 
 	public String getName() {

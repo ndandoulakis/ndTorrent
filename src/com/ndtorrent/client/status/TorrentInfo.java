@@ -10,7 +10,8 @@ public final class TorrentInfo {
 	private final BitSet missing;
 	private final int num_pieces;
 	private final String name;
-	private final long length;
+	private final long remaining_length;
+	private final long total_length;
 	private final double input_rate;
 	private final double output_rate;
 
@@ -21,7 +22,8 @@ public final class TorrentInfo {
 		this.missing = missing;
 		num_pieces = torrent.numPieces();
 		name = torrent.getName();
-		length = torrent.getTotalLength();
+		remaining_length = torrent.getRemainingLength();
+		total_length = torrent.getTotalLength();
 		this.input_rate = input_rate;
 		this.output_rate = output_rate;
 
@@ -43,8 +45,12 @@ public final class TorrentInfo {
 		return name;
 	}
 
-	public long getLength() {
-		return length;
+	public long getRemainingLength() {
+		return remaining_length;
+	}
+
+	public long getTotalLength() {
+		return total_length;
 	}
 
 	public double getInputRate() {

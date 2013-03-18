@@ -8,8 +8,8 @@ public class TorrentsModel extends AbstractTableModel {
 
 	private static final long serialVersionUID = 1L;
 
-	private String[] column_names = { "Name", "Size", "Status", "Progress",
-			"Dn Speed", "Up Speed" };
+	private String[] column_names = { "Name", "Size", "Remaining", "Status",
+			"Progress", "Dn Speed", "Up Speed" };
 
 	private TorrentInfo torrent;
 
@@ -25,7 +25,7 @@ public class TorrentsModel extends AbstractTableModel {
 
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		return columnIndex != 2 ? Object.class : BarRenderer.class;
+		return columnIndex != 3 ? Object.class : BarRenderer.class;
 	}
 
 	@Override
@@ -45,14 +45,17 @@ public class TorrentsModel extends AbstractTableModel {
 		case 0:
 			return info.getName();
 		case 1:
-			return String.format("%,.1f KB", info.getLength() / 1000.0);
+			return String.format("%,.1f KB", info.getTotalLength() / 1000.0);
 		case 2:
-			return info;
+			return String
+					.format("%,.1f KB", info.getRemainingLength() / 1000.0);
 		case 3:
-			return getProgressValue(info);
+			return info;
 		case 4:
-			return String.format("%.1f KB/s", info.getInputRate() / 1000.0);
+			return getProgressValue(info);
 		case 5:
+			return String.format("%.1f KB/s", info.getInputRate() / 1000.0);
+		case 6:
 			return String.format("%.1f KB/s", info.getOutputRate() / 1000.0);
 		default:
 			return null;

@@ -9,7 +9,7 @@ public class TorrentsModel extends AbstractTableModel {
 	private static final long serialVersionUID = 1L;
 
 	private String[] column_names = { "Name", "Size", "Remaining", "Status",
-			"Progress", "Dn Speed", "Up Speed" };
+			"Progress", "ETA", "Dn Speed", "Up Speed" };
 
 	private TorrentInfo torrent;
 
@@ -54,8 +54,10 @@ public class TorrentsModel extends AbstractTableModel {
 		case 4:
 			return getProgressValue(info);
 		case 5:
-			return String.format("%.1f KB/s", info.getInputRate() / 1000.0);
+			return getCompletionTime(info);
 		case 6:
+			return String.format("%.1f KB/s", info.getInputRate() / 1000.0);
+		case 7:
 			return String.format("%.1f KB/s", info.getOutputRate() / 1000.0);
 		default:
 			return null;
@@ -63,9 +65,21 @@ public class TorrentsModel extends AbstractTableModel {
 	}
 
 	private String getProgressValue(TorrentInfo info) {
-		int num_available = info.getAvailablePieces().cardinality();
-		int num_pieces = info.numPieces();
-		return String.format("%.1f%%", (100.0 * num_available) / num_pieces);
+		long total = info.getTotalLength();
+		long remaining = info.getRemainingLength();
+		if (total == 0)
+			return "100.0%%";
+		else
+			return String.format("%.1f%%",
+					(100.0 * (total - remaining) / total));
+	}
+
+	private String getCompletionTime(TorrentInfo info) {
+		long eta = info.getCompletionTime();
+		if (eta >= 0)
+			return String.format("%ds", info.getCompletionTime());
+		else
+			return null;
 	}
 
 }

@@ -17,6 +17,8 @@ public final class Piece {
 	private int block_length;
 	private int tail_length;
 
+	private int completed_length;
+
 	private ByteBuffer data;
 	private BitSet available;
 	private BitSet notrequested;
@@ -53,7 +55,7 @@ public final class Piece {
 	}
 
 	public boolean isComplete() {
-		return numAvailableBlocks() == num_blocks;
+		return piece_length == completed_length;
 	}
 
 	public void restoreRequested(BitSet requested) {
@@ -76,6 +78,10 @@ public final class Piece {
 
 	public int getLength() {
 		return piece_length;
+	}
+
+	public int getRemainingLength() {
+		return piece_length - completed_length;
 	}
 
 	public int getBlockIndex(int offset) {
@@ -132,7 +138,13 @@ public final class Piece {
 
 		data.position(offset);
 		data.put(block.getData().array(), 1 + 2 * 4, length);
-		available.set(getBlockIndex(offset), true);
+
+		int block_index = getBlockIndex(offset);
+		if (!available.get(block_index)) {
+			available.set(block_index, true);
+			completed_length += length;
+		}
+
 		resetSpeedModeTimeout();
 	}
 

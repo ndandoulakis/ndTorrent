@@ -9,7 +9,7 @@ public final class Piece {
 	public static final int SPEED_MODE_MEDIUM = 2;
 	public static final int SPEED_MODE_SLOW = 3;
 
-	static final long ONE_MINUTE = (long) (60 * 1e9);
+	static final long MINUTE = (long) (60 * 1e9);
 
 	private int index;
 	private int piece_length;
@@ -121,9 +121,11 @@ public final class Piece {
 	public void resetSpeedModeTimeout() {
 		long now = System.nanoTime();
 		if (mode == SPEED_MODE_FAST)
-			mode_timeout = now + ONE_MINUTE / 3;
+			mode_timeout = now + MINUTE / 3;
+		else if (mode == SPEED_MODE_MEDIUM)
+			mode_timeout = now + MINUTE;
 		else
-			mode_timeout = now + ONE_MINUTE;
+			mode_timeout = now + 2 * MINUTE;
 	}
 
 	public long getSpeedModeTimeout() {

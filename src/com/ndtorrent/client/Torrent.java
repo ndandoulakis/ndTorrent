@@ -96,7 +96,7 @@ public final class Torrent {
 			completed -= piece_length + tail_length;
 
 		for (Piece piece : partial.values()) {
-			completed += piece.getLength() - piece.getRemainingLength();
+			completed -= piece.getRemainingLength();
 		}
 
 		return total_length - completed;

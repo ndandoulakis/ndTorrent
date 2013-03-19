@@ -40,6 +40,11 @@ public final class Peer extends Thread {
 	// Expose status through local Data Transfer Object messages.
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
+	// Estimated time of completion.
+	private RollingTotal avg_total = new RollingTotal(10);
+	private long eta_timeout;
+	private long eta;
+
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
 
@@ -374,7 +379,7 @@ public final class Peer extends Thread {
 	}
 
 	private void spawnOutgoingConnections() {
-		// TODO keep every address (unique IPs) that we can't accept
+		// ? keep every address (unique IPs) that we can't accept
 		// due to max connections limit, for future outgoing connections.
 
 		// Check channel_selector size + socket_selector size.
@@ -398,10 +403,16 @@ public final class Peer extends Thread {
 	}
 
 	private void rollBlocksTotal() {
+		double total = 0;
 		long now = System.nanoTime();
 		for (PeerChannel channel : channels) {
 			channel.rollBlocksTotal(now);
+			total += channel.getBlocksTotal();
 		}
+
+		avg_total.roll(now);
+		if (!channels.isEmpty())
+			avg_total.add(total / PeerChannel.ROLLING_SECS);
 	}
 
 	private void choking() {
@@ -573,7 +584,23 @@ public final class Peer extends Thread {
 			missing.andNot(channel.getAvailablePieces());
 		}
 
-		TorrentInfo torrent_info = new TorrentInfo(torrent, missing,
+		// Estimated time of arrival
+		long remaining = torrent.getRemainingLength();
+		if (remaining == 0)
+			eta = 0;
+		else {
+			// Once every 10s
+			long now = System.nanoTime();
+			if (now >= eta_timeout) {
+				double avg = avg_total.getTotal() / 10;
+				eta = avg > 0 ? (long) (0.5 + remaining / avg) : -1;
+				eta_timeout = now + 10 * SECOND;
+			}
+		}
+		if (eta >= 0)
+			eta -= 1;
+
+		TorrentInfo torrent_info = new TorrentInfo(torrent, missing, eta,
 				input_rate, output_rate);
 
 		String info_hash = meta.getInfoHash();

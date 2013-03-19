@@ -13,6 +13,11 @@ public final class RollingTotal {
 
 	public RollingTotal(int nbuckets) {
 		// A bucket holds an amount for a certain second.
+
+		if (nbuckets < 1)
+			throw new IllegalArgumentException(
+					"nbuckets must be greater than zero");
+
 		buckets = new double[nbuckets];
 	}
 

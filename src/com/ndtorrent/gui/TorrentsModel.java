@@ -70,8 +70,7 @@ public class TorrentsModel extends AbstractTableModel {
 		if (total == 0)
 			return "100.0%%";
 		else
-			return String.format("%.1f%%",
-					(100.0 * (total - remaining) / total));
+			return String.format("%.1f%%", 100.0 * (total - remaining) / total);
 	}
 
 	private String getCompletionTime(TorrentInfo info) {

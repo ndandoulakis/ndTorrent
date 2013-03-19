@@ -77,11 +77,10 @@ public final class BTFile implements Comparable<Long> {
 
 	public void createFileAndPath(String parent_path) throws IOException {
 		// Create the file if doesn't exist, or has not the right length.
-		// The file is opened for reading and for synchronous writing to
-		// the underlying storage device.
+		// The file is opened for reading and for writing.
 		String parent = new File(name).getParent();
 		new File(parent_path + "./" + (parent != null ? parent : "")).mkdirs();
-		file = new RandomAccessFile(parent_path + "./" + name, "rwd");
+		file = new RandomAccessFile(parent_path + "./" + name, "rw");
 		if (file.length() != length) {
 			file.setLength(length);
 		}

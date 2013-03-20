@@ -41,7 +41,7 @@ public final class Peer extends Thread {
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
 	// Estimated time of completion.
-	private RollingTotal avg_total = new RollingTotal(10);
+	private RollingTotal avg_total = new RollingTotal(5);
 	private long eta_timeout;
 	private long eta;
 
@@ -133,6 +133,7 @@ public final class Peer extends Thread {
 		}
 
 		removeAllChannels();
+
 		try {
 			channel_selector.close();
 			socket_selector.close();
@@ -293,6 +294,7 @@ public final class Peer extends Thread {
 	}
 
 	private void processOutgoingMessages() {
+		// TODO if End Game mode, CANCEL blocks already got
 		for (SelectionKey key : channel_selector.selectedKeys()) {
 			if (!key.isValid() || !key.isWritable())
 				continue;
@@ -433,8 +435,7 @@ public final class Peer extends Thread {
 		// When we begin downloading, multiple random pieces may be selected.
 		boolean begin = !torrent.hasAvailablePieces();
 
-		// If End Game, a block may be requested from different channels at
-		// the same time. TODO send CANCEL messages
+		// If End Game, a block may be requested from different channels.
 		boolean end = !torrent.hasUnregisteredPieces();
 
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
@@ -594,12 +595,12 @@ public final class Peer extends Thread {
 		if (remaining == 0)
 			eta = 0;
 		else {
-			// Once every 5s
+			// Once every 4s
 			long now = System.nanoTime();
 			if (now >= eta_timeout) {
-				double avg = avg_total.getTotal() / 10;
+				double avg = avg_total.getTotal() / 5;
 				eta = avg > 0 ? (long) (0.5 + remaining / avg) : -1;
-				eta_timeout = now + 5 * SECOND;
+				eta_timeout = now + 4 * SECOND;
 			}
 		}
 		if (eta >= 0)

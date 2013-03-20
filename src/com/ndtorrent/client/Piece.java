@@ -138,13 +138,13 @@ public final class Piece {
 		if (!validBlockRegion(offset, length))
 			throw new IllegalArgumentException();
 
-		data.position(offset);
-		data.put(block.getData().array(), 1 + 2 * 4, length);
-
 		int block_index = getBlockIndex(offset);
+
 		if (!available.get(block_index)) {
 			available.set(block_index, true);
 			completed_length += length;
+			data.position(offset);
+			data.put(block.getData().array(), 1 + 2 * 4, length);
 		}
 
 		resetSpeedModeTimeout();

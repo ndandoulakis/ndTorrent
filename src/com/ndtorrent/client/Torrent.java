@@ -130,6 +130,10 @@ public final class Torrent {
 		return partial.values();
 	}
 
+	public boolean hasUnregisteredPieces() {
+		return unregistered.cardinality() > 0;
+	}
+
 	public void registerPiece(int index) {
 		if (index < 0 || index >= num_pieces)
 			throw new IndexOutOfBoundsException("index: " + index);

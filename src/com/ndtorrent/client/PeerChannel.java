@@ -155,13 +155,19 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		}
 	}
 
-	public void addOutgoingRequests(Piece piece) {
-		BitSet bs = piece.getNotRequested();
+	public void addOutgoingRequests(Piece piece, boolean end_game) {
+		BitSet bs;
+		if (!end_game)
+			bs = piece.getNotRequested();
+		else
+			bs = collectNotRequested(piece); // for this channel
 		int start_bit = bs.nextSetBit(0);
 		if (!canRequestMore() || start_bit < 0)
 			return;
 		for (int i = start_bit; i >= 0; i = bs.nextSetBit(i + 1)) {
-			bs.flip(i);
+			// On End Game this may be set multiple times.
+			piece.setBlockAsRequested(i);
+
 			int index = piece.getIndex();
 			int offset = piece.getBlockOffset(i);
 			int length = piece.getBlockLength(i);
@@ -171,6 +177,15 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 			if (!canRequestMore())
 				return;
 		}
+	}
+
+	private BitSet collectNotRequested(Piece piece) {
+		int piece_index = piece.getIndex();
+		BitSet not_requested = new BitSet();
+		getRequested(not_requested, piece_index, piece.getBlockLength());
+		not_requested.or(piece.getAvailableBlocks());
+		not_requested.flip(0, piece.numBlocks());
+		return not_requested;
 	}
 
 	public void addBitfield(BitSet pieces, int nbits) {

@@ -433,6 +433,10 @@ public final class Peer extends Thread {
 		// When we begin downloading, multiple random pieces may be selected.
 		boolean begin = !torrent.hasAvailablePieces();
 
+		// If End Game, a block may be requested from different channels at
+		// the same time. TODO send CANCEL messages
+		boolean end = !torrent.hasUnregisteredPieces();
+
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested())
@@ -451,10 +455,11 @@ public final class Peer extends Thread {
 					if (piece_mode == Piece.SPEED_MODE_NONE)
 						piece.setSpeedMode(channel_mode);
 					else if (piece_mode != channel_mode
+							&& !end
 							&& !(piece_mode == Piece.SPEED_MODE_SLOW && channel_mode == Piece.SPEED_MODE_MEDIUM)
 							&& !(piece_mode == Piece.SPEED_MODE_MEDIUM && channel_mode == Piece.SPEED_MODE_FAST))
 						continue;
-					channel.addOutgoingRequests(piece);
+					channel.addOutgoingRequests(piece, end);
 				}
 			}
 			if (channel.canRequestMore()) {
@@ -589,12 +594,12 @@ public final class Peer extends Thread {
 		if (remaining == 0)
 			eta = 0;
 		else {
-			// Once every 10s
+			// Once every 5s
 			long now = System.nanoTime();
 			if (now >= eta_timeout) {
 				double avg = avg_total.getTotal() / 10;
 				eta = avg > 0 ? (long) (0.5 + remaining / avg) : -1;
-				eta_timeout = now + 10 * SECOND;
+				eta_timeout = now + 5 * SECOND;
 			}
 		}
 		if (eta >= 0)

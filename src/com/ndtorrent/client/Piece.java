@@ -64,6 +64,13 @@ public final class Piece {
 		notrequested.andNot(available);
 	}
 
+	public void setBlockAsRequested(int block_index) {
+		if (block_index < 0 || block_index >= num_blocks)
+			throw new IllegalArgumentException("Bad index: " + block_index);
+
+		notrequested.set(block_index, false);
+	}
+
 	public BitSet getNotRequested() {
 		return notrequested;
 	}

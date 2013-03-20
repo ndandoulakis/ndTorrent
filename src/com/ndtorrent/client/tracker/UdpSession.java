@@ -42,6 +42,7 @@ public final class UdpSession extends Session implements Runnable {
 	private ByteBuffer response = ByteBuffer.allocate(MAX_RESPONSE_LENGTH);
 
 	private boolean is_timeout;
+	private boolean is_connection_error;
 	private long updated_at;
 	private Event last_event;
 
@@ -87,6 +88,7 @@ public final class UdpSession extends Session implements Runnable {
 			return;
 
 		last_event = event;
+		is_connection_error = false;
 		is_timeout = false;
 
 		request_body = ByteBuffer.allocate(REQUEST_BODY_LENGTH);
@@ -114,7 +116,7 @@ public final class UdpSession extends Session implements Runnable {
 
 	@Override
 	public boolean isConnectionError() {
-		return false;
+		return is_connection_error;
 	}
 
 	@Override
@@ -131,6 +133,7 @@ public final class UdpSession extends Session implements Runnable {
 
 		} catch (IOException e) {
 			// TODO save the connection error
+			is_connection_error = true;
 			e.printStackTrace();
 		} finally {
 			if (socket != null) {

@@ -181,11 +181,11 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 
 	private BitSet collectNotRequested(Piece piece) {
 		int piece_index = piece.getIndex();
-		BitSet not_requested = new BitSet();
-		getRequested(not_requested, piece_index, piece.getBlockLength());
-		not_requested.or(piece.getAvailableBlocks());
-		not_requested.flip(0, piece.numBlocks());
-		return not_requested;
+		BitSet requested = new BitSet();
+		getRequested(requested, piece_index, piece.getBlockLength());
+		requested.or(piece.getAvailableBlocks());
+		requested.flip(0, piece.numBlocks());
+		return requested;
 	}
 
 	public void addBitfield(BitSet pieces, int nbits) {

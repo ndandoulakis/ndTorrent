@@ -84,22 +84,17 @@ public final class Torrent {
 	}
 
 	public long getRemainingLength() {
-		long completed = 0;
-		int start_bit = unregistered.nextClearBit(0);
-		for (int i = start_bit; i >= 0 && i < num_pieces; i = unregistered
-				.nextClearBit(i + 1)) {
-
-			completed += piece_length;
-		}
+		int registered = num_pieces - unregistered.cardinality();
+		long length = registered * piece_length;
 
 		if (!unregistered.get(num_pieces - 1))
-			completed -= piece_length - tail_length;
+			length -= piece_length - tail_length;
 
 		for (Piece piece : partial.values()) {
-			completed -= piece.getRemainingLength();
+			length -= piece.getRemainingLength();
 		}
 
-		return total_length - completed;
+		return total_length - length;
 	}
 
 	public String getName() {

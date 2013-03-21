@@ -101,6 +101,7 @@ public final class Peer extends Thread {
 				processIncomingMessages();
 				processOutgoingMessages();
 				requestMoreBlocks();
+				cancelEndGameRequests();
 
 				// Low priority //
 				// Operations that are performed once per second.
@@ -222,7 +223,7 @@ public final class Peer extends Thread {
 	}
 
 	public boolean isSeed() {
-		return torrent.numAvailablePieces() == torrent.numPieces();
+		return torrent.isSeed();
 	}
 
 	public boolean addIncomingConnection(BTSocket socket) {
@@ -294,12 +295,23 @@ public final class Peer extends Thread {
 	}
 
 	private void processOutgoingMessages() {
-		// TODO if End Game mode, CANCEL blocks already got
 		for (SelectionKey key : channel_selector.selectedKeys()) {
 			if (!key.isValid() || !key.isWritable())
 				continue;
 			PeerChannel channel = (PeerChannel) key.attachment();
 			channel.processOutgoingMessages();
+		}
+	}
+
+	private void cancelEndGameRequests() {
+		boolean end = !torrent.hasUnregisteredPieces();
+		if (!end || isSeed())
+			return;
+
+		Collection<Piece> partial_entries = torrent.getPartialPieces();
+		for (PeerChannel channel : channels) {
+			channel.cancelRequestsExcept(partial_entries);
+			channel.cancelAvailableBlocks(partial_entries);
 		}
 	}
 
@@ -355,7 +367,7 @@ public final class Peer extends Thread {
 				for (PeerChannel channel : channels) {
 					if (channel.hasPiece(index)) {
 						// We can call this even if there are no requests.
-						channel.cancelPendingRequests(index);
+						channel.cancelPendingRequests(index, null);
 					}
 				}
 				piece.setSpeedMode(Piece.SPEED_MODE_NONE);
@@ -444,8 +456,7 @@ public final class Peer extends Thread {
 				continue;
 			// Speed mode helps to keep the number of partial pieces low
 			// (piling up) by preventing the mix of SLOW and FAST requests.
-			// MEDIUM channels are allowed to contribute to SLOW pieces and
-			// MEDIUM pieces can accept requests from the FAST channels.
+			// FAST channels are allowed to assist MEDIUM mode pieces.
 			int channel_mode = channel.getSpeedMode();
 			for (Piece piece : partial_entries) {
 				if (!channel.canRequestMore())
@@ -457,7 +468,6 @@ public final class Peer extends Thread {
 						piece.setSpeedMode(channel_mode);
 					else if (piece_mode != channel_mode
 							&& !end
-							&& !(piece_mode == Piece.SPEED_MODE_SLOW && channel_mode == Piece.SPEED_MODE_MEDIUM)
 							&& !(piece_mode == Piece.SPEED_MODE_MEDIUM && channel_mode == Piece.SPEED_MODE_FAST))
 						continue;
 					channel.addOutgoingRequests(piece, end);

@@ -1,15 +1,17 @@
 package com.ndtorrent.client;
 
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 public final class PeerChannel implements Comparable<PeerChannel> {
+	static final int MAX_REQUESTS = 255;
+
 	// A rolling total longer than the choking round can make the
 	// rating a bit more accurate due to data transmission delays.
 	static final int ROLLING_SECS = 15;
-	static final int MAX_REQUESTS = 255;
 
 	public BTSocket socket;
 
@@ -312,7 +314,33 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		}
 	}
 
-	public void cancelPendingRequests(int piece_index) {
+	public void cancelAvailableBlocks(Collection<Piece> pieces) {
+		for (Piece piece : pieces) {
+			cancelPendingRequests(piece.getIndex(), piece.getAvailableBlocks());
+		}
+	}
+
+	public void cancelRequestsExcept(Collection<Piece> pieces) {
+		BitSet exclude = new BitSet();
+		for (Piece piece : pieces) {
+			exclude.set(piece.getIndex());
+		}
+
+		BitSet requested = new BitSet();
+		for (Message m : unfulfilled) {
+			requested.set(m.getPieceIndex());
+		}
+
+		int start_bit = requested.nextSetBit(0);
+		for (int i = start_bit; i >= 0; i = requested.nextSetBit(i + 1)) {
+			if (!exclude.get(i))
+				cancelPendingRequests(i, null);
+		}
+	}
+
+	public void cancelPendingRequests(int piece_index, BitSet blocks) {
+		// To remove every matching piece index, pass null blocks.
+
 		Iterator<Message> iter;
 		iter = unfulfilled.iterator();
 		while (iter.hasNext()) {
@@ -320,6 +348,9 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 			if (m.getPieceIndex() == piece_index) {
 				int offset = m.getBlockBegin();
 				int length = m.getBlockLength();
+				int block_index = offset / length;
+				if (blocks != null && !blocks.get(block_index))
+					continue;
 				outgoing.add(Message.newCancel(piece_index, offset, length));
 				iter.remove();
 			}
@@ -328,6 +359,9 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		while (iter.hasNext()) {
 			Message m = iter.next();
 			if (m.isBlockRequest() && m.getPieceIndex() == piece_index) {
+				int block_index = m.getBlockBegin() / m.getBlockLength();
+				if (blocks != null && !blocks.get(block_index))
+					continue;
 				iter.remove();
 			}
 		}

@@ -105,6 +105,12 @@ public final class Torrent {
 		return total_length - length;
 	}
 
+	public boolean isSeed() {
+		// though not wrong, there is no reason to check availability
+		// when unregistered pieces exist
+		return !hasUnregisteredPieces() && numAvailablePieces() == numPieces();
+	}
+
 	public int numPieces() {
 		return num_pieces;
 	}

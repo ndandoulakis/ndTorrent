@@ -20,6 +20,8 @@ import java.util.List;
 import javax.swing.BoxLayout;
 import javax.swing.JSplitPane;
 import javax.swing.JSeparator;
+import java.awt.Component;
+import javax.swing.Box;
 
 public class Frontend implements StatusObserver {
 
@@ -33,8 +35,9 @@ public class Frontend implements StatusObserver {
 	private JSplitPane splitPane_1;
 	private JSplitPane splitPane_2;
 	private JSplitPane splitPane_3;
-	private Statistics stats;
+	private SpeedGraph graph;
 	private JSeparator separator;
+	private Component verticalStrut;
 
 	/**
 	 * Launch the application.
@@ -91,27 +94,31 @@ public class Frontend implements StatusObserver {
 		splitPane_1.setRightComponent(splitPane_2);
 		splitPane_2.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
-		trackersFrame = new TableFrame("Trackers");
-		splitPane_2.setLeftComponent(trackersFrame);
-		trackersFrame.setTableModel(new TrackersModel());
-
 		splitPane_3 = new JSplitPane();
+		splitPane_3.setResizeWeight(1.0);
 		splitPane_3.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		splitPane_2.setRightComponent(splitPane_3);
 
+		connectionsFrame = new TableFrame("Connections");
+		splitPane_3.setLeftComponent(connectionsFrame);
+		connectionsFrame.setTableModel(new ConnectionsModel());
+
+		trackersFrame = new TableFrame("Trackers");
+		splitPane_3.setRightComponent(trackersFrame);
+		trackersFrame.setTableModel(new TrackersModel());
+
 		piecesFrame = new TableFrame("Pieces");
-		splitPane_3.setLeftComponent(piecesFrame);
+		splitPane_2.setLeftComponent(piecesFrame);
 		piecesFrame.setTableModel(new PiecesModel());
 
-		connectionsFrame = new TableFrame("Connections");
-		splitPane_3.setRightComponent(connectionsFrame);
-		connectionsFrame.setTableModel(new ConnectionsModel());
+		verticalStrut = Box.createVerticalStrut(2);
+		frmNdtorrentAlpha.getContentPane().add(verticalStrut);
 
 		separator = new JSeparator();
 		frmNdtorrentAlpha.getContentPane().add(separator);
 
-		stats = new Statistics();
-		frmNdtorrentAlpha.getContentPane().add(stats);
+		graph = new SpeedGraph();
+		frmNdtorrentAlpha.getContentPane().add(graph);
 
 		client.setServerPort(Client.DEFAULT_PORT);
 
@@ -165,8 +172,8 @@ public class Frontend implements StatusObserver {
 				((TorrentsModel) torrentsFrame.getTableModel())
 						.setTorrent(torrent);
 
-				stats.addInputRate(torrent.getInputRate());
-				stats.addOutputRate(torrent.getOutputRate());
+				graph.addInputRate(torrent.getInputRate());
+				graph.addOutputRate(torrent.getOutputRate());
 			}
 		});
 	}

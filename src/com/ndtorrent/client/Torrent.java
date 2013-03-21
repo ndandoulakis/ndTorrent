@@ -83,6 +83,14 @@ public final class Torrent {
 		}
 	}
 
+	public String getName() {
+		return name;
+	}
+
+	public long getTotalLength() {
+		return total_length;
+	}
+
 	public long getRemainingLength() {
 		int registered = num_pieces - unregistered.cardinality();
 		long length = registered * piece_length;
@@ -97,20 +105,12 @@ public final class Torrent {
 		return total_length - length;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public long getTotalLength() {
-		return total_length;
-	}
-
 	public int numPieces() {
 		return num_pieces;
 	}
 
 	public boolean hasAvailablePieces() {
-		return available.nextSetBit(0) >= 0;
+		return !available.isEmpty();
 	}
 
 	public int numAvailablePieces() {
@@ -126,7 +126,7 @@ public final class Torrent {
 	}
 
 	public boolean hasUnregisteredPieces() {
-		return unregistered.cardinality() > 0;
+		return !unregistered.isEmpty();
 	}
 
 	public void registerPiece(int index) {

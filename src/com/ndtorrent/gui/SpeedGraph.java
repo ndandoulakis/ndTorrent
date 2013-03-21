@@ -10,7 +10,7 @@ import javax.swing.JComponent;
 
 import com.ndtorrent.client.RollingTotal;
 
-public final class Statistics extends JComponent {
+public final class SpeedGraph extends JComponent {
 
 	private static final long serialVersionUID = 1L;
 
@@ -24,7 +24,7 @@ public final class Statistics extends JComponent {
 	private RollingTotal input_rate = new RollingTotal(5 * 60);
 	private RollingTotal output_rate = new RollingTotal(5 * 60);
 
-	public Statistics() {
+	public SpeedGraph() {
 		setPreferredSize(new Dimension(0, 80));
 	}
 

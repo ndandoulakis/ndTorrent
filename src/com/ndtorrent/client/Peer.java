@@ -101,6 +101,7 @@ public final class Peer extends Thread {
 				processIncomingMessages();
 				processOutgoingMessages();
 				requestMoreBlocks();
+				requestEndGameBlocks();
 				cancelEndGameRequests();
 
 				// Low priority //
@@ -434,18 +435,15 @@ public final class Peer extends Thread {
 	}
 
 	private void requestMoreBlocks() {
-		if (torrent.isSeed())
-			return;
-
 		// Blocks of the same piece can be requested from different channels.
 		// The number of channels that will contribute to a particular piece
 		// depends on how many requests each channel can pipeline.
 
+		if (torrent.isSeed() || !torrent.hasUnregisteredPieces())
+			return;
+
 		// When we begin downloading, multiple random pieces may be selected.
 		boolean begin = !torrent.hasAvailablePieces();
-
-		// If end-game, a block may be requested from different channels.
-		boolean end = !torrent.hasUnregisteredPieces();
 
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
@@ -462,9 +460,9 @@ public final class Peer extends Thread {
 					int piece_mode = piece.getSpeedMode();
 					if (piece_mode == Piece.SPEED_MODE_NONE)
 						piece.setSpeedMode(channel_mode);
-					else if (piece_mode != channel_mode && !end)
+					else if (piece_mode != channel_mode)
 						continue;
-					channel.addOutgoingRequests(piece, end);
+					channel.addOutgoingRequests(piece, piece.getNotRequested());
 				}
 			}
 			if (channel.canRequestMore()) {
@@ -476,6 +474,26 @@ public final class Peer extends Thread {
 				// Update partial_entries and possibly prevent next channels
 				// from selecting a new piece, thus to avoid piling up pieces.
 				partial_entries = torrent.getPartialPieces();
+			}
+		}
+	}
+
+	private void requestEndGameBlocks() {
+		// On end-game, a block may be requested from different channels.
+
+		if (torrent.isSeed() || torrent.hasUnregisteredPieces())
+			return;
+
+		Collection<Piece> partial_entries = torrent.getPartialPieces();
+		for (PeerChannel channel : channels) {
+			for (Piece piece : partial_entries) {
+				if (!channel.canRequestMore())
+					break;
+				int index = piece.getIndex();
+				if (channel.hasPiece(index)) {
+					BitSet blocks = channel.findNotRequested(piece);
+					channel.addOutgoingRequests(piece, blocks);
+				}
 			}
 		}
 	}

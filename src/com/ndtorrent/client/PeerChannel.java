@@ -161,9 +161,14 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		int start_bit = blocks.nextSetBit(0);
 		if (!canRequestMore() || start_bit < 0)
 			return;
+		boolean fast = getSpeedMode() == Piece.SPEED_MODE_FAST;
 		for (int i = start_bit; i >= 0; i = blocks.nextSetBit(i + 1)) {
 			// On end-game this may be set multiple times.
 			piece.setBlockAsRequested(i);
+
+			if (fast) {
+				piece.setBlockAsFast(i);
+			}
 
 			int index = piece.getIndex();
 			int offset = piece.getBlockOffset(i);

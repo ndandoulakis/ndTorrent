@@ -486,15 +486,29 @@ public final class Peer extends Thread {
 
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
-			for (Piece piece : partial_entries) {
-				if (!channel.canRequestMore())
-					break;
-				int index = piece.getIndex();
-				if (channel.hasPiece(index)) {
-					BitSet blocks = channel.findNotRequested(piece);
-					channel.addOutgoingRequests(piece, blocks);
+			int priority = -1; // Free, Slow/Medium, Fast
+			while (++priority < 2)
+				for (Piece piece : partial_entries) {
+					if (!channel.canRequestMore())
+						break;
+					int index = piece.getIndex();
+					if (channel.hasPiece(index)) {
+						BitSet blocks = null;
+						switch (priority) {
+						case 0:
+							blocks = piece.getNotRequested();
+							break;
+						case 1:
+							blocks = channel.findNotRequested(piece);
+							blocks.andNot(piece.getFastBlocks());
+							break;
+						case 2:
+							blocks = channel.findNotRequested(piece);
+							break;
+						}
+						channel.addOutgoingRequests(piece, blocks);
+					}
 				}
-			}
 		}
 	}
 

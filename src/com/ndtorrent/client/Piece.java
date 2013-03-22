@@ -22,6 +22,7 @@ public final class Piece {
 	private ByteBuffer data;
 	private BitSet available;
 	private BitSet not_requested;
+	private BitSet fast;
 
 	private int mode;
 	private long mode_timeout;
@@ -41,6 +42,7 @@ public final class Piece {
 		available = new BitSet(num_blocks);
 		not_requested = new BitSet(num_blocks);
 		not_requested.set(0, num_blocks, true);
+		fast = new BitSet(num_blocks);
 
 		tail_length = piece_length % block_length;
 		if (piece_length != 0 && tail_length == 0)
@@ -63,15 +65,28 @@ public final class Piece {
 		not_requested.andNot(requested);
 		not_requested.andNot(available);
 
+		fast.and(requested);
+
 		if (requested.isEmpty())
 			setSpeedMode(Piece.SPEED_MODE_NONE);
 	}
 
-	public void setBlockAsRequested(int block_index) {
-		if (block_index < 0 || block_index >= num_blocks)
-			throw new IllegalArgumentException("Bad index: " + block_index);
+	public void setBlockAsFast(int index) {
+		if (index < 0 || index >= num_blocks)
+			throw new IllegalArgumentException("Bad index: " + index);
 
-		not_requested.set(block_index, false);
+		fast.set(index, true);
+	}
+
+	public BitSet getFastBlocks() {
+		return fast;
+	}
+
+	public void setBlockAsRequested(int index) {
+		if (index < 0 || index >= num_blocks)
+			throw new IllegalArgumentException("Bad index: " + index);
+
+		not_requested.set(index, false);
 	}
 
 	public BitSet getNotRequested() {

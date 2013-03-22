@@ -79,9 +79,9 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 
 	public int getSpeedMode() {
 		double total = getBlocksTotal();
-		if (total < ROLLING_SECS * 4000)
+		if (total < ROLLING_SECS * 2000)
 			return Piece.SPEED_MODE_SLOW;
-		if (total < ROLLING_SECS * 32000)
+		if (total < ROLLING_SECS * 4000)
 			return Piece.SPEED_MODE_MEDIUM;
 		return Piece.SPEED_MODE_FAST;
 	}
@@ -145,7 +145,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
-		final int REQUESTS = 1 + (int) (getBlocksTotal() / (15 * 8000));
+		final int REQUESTS = 1 + (int) (getBlocksTotal() / (ROLLING_SECS * 8000));
 		return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
 	}
 
@@ -167,7 +167,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		if (!canRequestMore() || start_bit < 0)
 			return;
 		for (int i = start_bit; i >= 0; i = bs.nextSetBit(i + 1)) {
-			// On End Game this may be set multiple times.
+			// On end-game this may be set multiple times.
 			piece.setBlockAsRequested(i);
 
 			int index = piece.getIndex();

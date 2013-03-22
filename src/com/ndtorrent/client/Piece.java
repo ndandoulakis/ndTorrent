@@ -21,7 +21,7 @@ public final class Piece {
 
 	private ByteBuffer data;
 	private BitSet available;
-	private BitSet notrequested;
+	private BitSet not_requested;
 
 	private int mode;
 	private long mode_timeout;
@@ -39,8 +39,8 @@ public final class Piece {
 
 		num_blocks = (piece_length + block_length - 1) / block_length;
 		available = new BitSet(num_blocks);
-		notrequested = new BitSet(num_blocks);
-		notrequested.set(0, num_blocks, true);
+		not_requested = new BitSet(num_blocks);
+		not_requested.set(0, num_blocks, true);
 
 		tail_length = piece_length % block_length;
 		if (piece_length != 0 && tail_length == 0)
@@ -59,20 +59,23 @@ public final class Piece {
 	}
 
 	public void restoreRequested(BitSet requested) {
-		notrequested.set(0, num_blocks, true);
-		notrequested.andNot(requested);
-		notrequested.andNot(available);
+		not_requested.set(0, num_blocks, true);
+		not_requested.andNot(requested);
+		not_requested.andNot(available);
+
+		if (requested.isEmpty())
+			setSpeedMode(Piece.SPEED_MODE_NONE);
 	}
 
 	public void setBlockAsRequested(int block_index) {
 		if (block_index < 0 || block_index >= num_blocks)
 			throw new IllegalArgumentException("Bad index: " + block_index);
 
-		notrequested.set(block_index, false);
+		not_requested.set(block_index, false);
 	}
 
 	public BitSet getNotRequested() {
-		return notrequested;
+		return not_requested;
 	}
 
 	public ByteBuffer getData() {
@@ -127,12 +130,10 @@ public final class Piece {
 
 	public void resetSpeedModeTimeout() {
 		long now = System.nanoTime();
-		if (mode == SPEED_MODE_FAST)
-			mode_timeout = now + MINUTE / 3;
-		else if (mode == SPEED_MODE_MEDIUM)
-			mode_timeout = now + MINUTE;
+		if (mode == SPEED_MODE_SLOW)
+			mode_timeout = now + MINUTE * 3;
 		else
-			mode_timeout = now + 2 * MINUTE;
+			mode_timeout = now + MINUTE / 2;
 	}
 
 	public long getSpeedModeTimeout() {

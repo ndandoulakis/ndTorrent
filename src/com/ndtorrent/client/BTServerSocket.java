@@ -39,7 +39,6 @@ public final class BTServerSocket extends Thread {
 	}
 
 	public void close() {
-		handlers.clear();
 		stop_requested = true;
 	}
 
@@ -67,6 +66,11 @@ public final class BTServerSocket extends Thread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+
+		for (SelectionKey key : selector.keys()) {
+			BTSocket socket = (BTSocket) key.attachment();
+			socket.close();
 		}
 
 		try {

@@ -134,15 +134,9 @@ public final class Peer extends Thread {
 			}
 		}
 
-		removeAllChannels();
+		closeConnections();
 
-		try {
-			channel_selector.close();
-			socket_selector.close();
-			torrent.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		torrent.close();
 
 	}
 
@@ -313,11 +307,24 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void removeAllChannels() {
+	private void closeConnections() {
+		for (SelectionKey key : socket_selector.keys()) {
+			BTSocket socket = (BTSocket) key.attachment();
+			socket.close();
+		}
+
 		for (PeerChannel channel : channels) {
 			channel.socket.close();
 		}
 		channels.clear();
+
+		try {
+			channel_selector.close();
+			socket_selector.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	private void removeBrokenChannels() {
@@ -455,6 +462,9 @@ public final class Peer extends Thread {
 			for (Piece piece : partial_entries) {
 				if (!channel.canRequestMore())
 					break;
+				// TODO give priority to pieces that have already requests
+				// from this channel.
+				// TODO if piece.requests.isempty set speed mode to NONE.
 				int index = piece.getIndex();
 				if (channel.hasPiece(index)) {
 					int piece_mode = piece.getSpeedMode();

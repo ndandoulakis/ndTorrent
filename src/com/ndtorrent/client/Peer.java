@@ -41,7 +41,7 @@ public final class Peer extends Thread {
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
 	// Estimated time of completion.
-	private RollingTotal avg_total = new RollingTotal(10);
+	private RollingTotal avg_total = new RollingTotal(5);
 	private long eta_timeout;
 	private long eta;
 
@@ -498,29 +498,22 @@ public final class Peer extends Thread {
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested())
 				continue;
-			int priority = -1; // Free, Slow/Medium, Fast
-			while (++priority < 3)
-				for (Piece piece : partial_entries) {
-					if (!channel.canRequestMore())
-						break;
-					int index = piece.getIndex();
-					if (channel.hasPiece(index)) {
-						BitSet blocks = null;
-						switch (priority) {
-						case 0:
-							blocks = piece.getNotRequested();
-							break;
-						case 1:
-							blocks = channel.findNotRequested(piece);
-							blocks.andNot(piece.getFastBlocks());
-							break;
-						case 2:
-							blocks = channel.findNotRequested(piece);
-							break;
-						}
-						channel.addOutgoingRequests(piece, blocks);
-					}
-				}
+			for (Piece piece : partial_entries) {
+				int index = piece.getIndex();
+				if (!channel.hasPiece(index))
+					continue;
+				if (!channel.canRequestMore())
+					break;
+				BitSet blocks = channel.findNotRequested(piece);
+				blocks.andNot(piece.getReservedBlocks());
+				channel.addOutgoingRequests(piece, blocks);
+			}
+			if (!channel.canRequestMore())
+				continue;
+			for (Piece piece : partial_entries) {
+				if (channel.hasPiece(piece.getIndex()))
+					piece.getReservedBlocks().clear();
+			}
 		}
 	}
 
@@ -646,9 +639,9 @@ public final class Peer extends Thread {
 			// Once every 4s
 			long now = System.nanoTime();
 			if (now >= eta_timeout) {
-				double avg = avg_total.getTotal() / 10;
+				double avg = avg_total.getTotal() / 5;
 				eta = 1 + (avg > 0 ? (long) (0.5 + remaining / avg) : -1);
-				eta_timeout = now + 5 * SECOND;
+				eta_timeout = now + 4 * SECOND;
 			}
 		}
 		if (eta >= 0)

@@ -486,8 +486,10 @@ public final class Peer extends Thread {
 
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
+			if (channel.amChoked() || !channel.amInterested())
+				continue;
 			int priority = -1; // Free, Slow/Medium, Fast
-			while (++priority < 2)
+			while (++priority < 3)
 				for (Piece piece : partial_entries) {
 					if (!channel.canRequestMore())
 						break;

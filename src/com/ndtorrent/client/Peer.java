@@ -41,7 +41,7 @@ public final class Peer extends Thread {
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
 	// Estimated time of completion.
-	private RollingTotal avg_total = new RollingTotal(5);
+	private RollingTotal avg_total = new RollingTotal(10);
 	private long eta_timeout;
 	private long eta;
 
@@ -101,8 +101,8 @@ public final class Peer extends Thread {
 				processIncomingMessages();
 				processOutgoingMessages();
 				requestMoreBlocks();
-				requestEndGameBlocks();
 				cancelEndGameRequests();
+				requestEndGameBlocks();
 
 				// Low priority //
 				// Operations that are performed once per second.
@@ -636,9 +636,9 @@ public final class Peer extends Thread {
 			// Once every 4s
 			long now = System.nanoTime();
 			if (now >= eta_timeout) {
-				double avg = avg_total.getTotal() / 5;
-				eta = avg > 0 ? (long) (0.5 + remaining / avg) : -1;
-				eta_timeout = now + 4 * SECOND;
+				double avg = avg_total.getTotal() / 10;
+				eta = 1 + (avg > 0 ? (long) (0.5 + remaining / avg) : -1);
+				eta_timeout = now + 5 * SECOND;
 			}
 		}
 		if (eta >= 0)

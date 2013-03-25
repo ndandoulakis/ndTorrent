@@ -456,22 +456,42 @@ public final class Peer extends Thread {
 			// Speed mode helps to keep the number of partial pieces low
 			// (piling up) by preventing the mix of SLOW and FAST requests.
 			int channel_mode = channel.getSpeedMode();
-			for (Piece piece : partial_entries) {
-				if (!channel.canRequestMore())
-					break;
-				// TODO give priority to pieces that have already requests
-				// from this channel.
-				// TODO if piece.requests.isempty set speed mode to NONE.
-				int index = piece.getIndex();
-				if (channel.hasPiece(index)) {
-					int piece_mode = piece.getSpeedMode();
-					if (piece_mode == Piece.SPEED_MODE_NONE)
-						piece.setSpeedMode(channel_mode);
-					else if (piece_mode != channel_mode)
-						continue;
-					channel.addOutgoingRequests(piece, piece.getNotRequested());
+			for (int priority = 0; priority <= 1; priority++) {
+				for (Piece piece : partial_entries) {
+					if (!channel.canRequestMore())
+						break;
+
+					if (!piece.hasPendingRequests())
+						piece.setSpeedMode(Piece.SPEED_MODE_NONE);
+
+					int index = piece.getIndex();
+					if (channel.hasPiece(index)) {
+						int piece_mode = piece.getSpeedMode();
+						boolean shared_piece = channel.isSharing(piece);
+
+						if (piece_mode != channel_mode && !shared_piece)
+							piece.setSpeedMode(channel_mode);
+
+						if (piece_mode == Piece.SPEED_MODE_NONE)
+							piece.setSpeedMode(channel_mode);
+						else if (piece_mode != channel_mode)
+							continue;
+
+						if (priority == 0) {
+							boolean fast_channel = channel_mode == Piece.SPEED_MODE_FAST;
+
+							if (!(fast_channel && channel.participatedIn(index)))
+								continue;
+
+							if (!(!fast_channel && shared_piece))
+								continue;
+						}
+
+						channel.requestToTheMax(piece, piece.getNotRequested());
+					}
 				}
 			}
+
 			if (channel.canRequestMore()) {
 				int index = begin ? selectRandomPiece(channel)
 						: selectRarePiece(channel);
@@ -503,7 +523,7 @@ public final class Peer extends Thread {
 					break;
 				BitSet blocks = channel.findNotRequested(piece);
 				blocks.andNot(piece.getReservedBlocks());
-				channel.addOutgoingRequests(piece, blocks);
+				channel.requestToTheMax(piece, blocks);
 			}
 			if (!channel.canRequestMore())
 				continue;

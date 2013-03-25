@@ -74,6 +74,11 @@ public final class Piece {
 
 	}
 
+	public boolean hasPendingRequests() {
+		int requests = num_blocks - not_requested.cardinality();
+		return numAvailableBlocks() < requests;
+	}
+
 	public BitSet getPendingRequests() {
 		BitSet requests = not_requested.get(0, num_blocks);
 		requests.flip(0, num_blocks);

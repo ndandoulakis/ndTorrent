@@ -149,6 +149,13 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
 	}
 
+	public boolean isSharing(Piece piece) {
+		// True if this AND other channels have pending requests.
+		BitSet requests = piece.getPendingRequests();
+		requests.andNot(getPendingRequests(piece));
+		return !requests.isEmpty();
+	}
+
 	public BitSet findNotRequested(Piece piece) {
 		BitSet requests = getPendingRequests(piece);
 		requests.or(piece.getAvailableBlocks());
@@ -168,14 +175,13 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		return requests;
 	}
 
-	public void addOutgoingRequests(Piece piece, BitSet blocks) {
-		int start_bit = blocks.nextSetBit(0);
-		if (!canRequestMore() || start_bit < 0)
+	public void requestToTheMax(Piece piece, BitSet blocks) {
+		if (!canRequestMore())
 			return;
+		int start_bit = blocks.nextSetBit(0);
 		for (int i = start_bit; i >= 0; i = blocks.nextSetBit(i + 1)) {
-			// On end-game this may be set multiple times.
+			// May be set multiple times on end-game.
 			piece.setBlockAsRequested(i);
-
 			piece.setBlockAsReserved(i);
 
 			int index = piece.getIndex();

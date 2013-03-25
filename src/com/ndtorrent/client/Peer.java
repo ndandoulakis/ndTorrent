@@ -385,15 +385,12 @@ public final class Peer extends Thread {
 		// If a block is flagged as requested but no channel has a corresponding
 		// unfulfilled request, it's considered broken and must be restored.
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
-		BitSet requested = new BitSet();
 		for (Piece piece : partial_entries) {
-			requested.set(0, requested.length(), false);
-			int piece_index = piece.getIndex();
-			int block_length = piece.getBlockLength();
+			BitSet requests = new BitSet(piece.numBlocks());
 			for (PeerChannel channel : channels) {
-				channel.getRequested(requested, piece_index, block_length);
+				requests.or(channel.getPendingRequests(piece));
 			}
-			piece.restoreRequested(requested);
+			piece.restorePendingRequests(requests);
 		}
 	}
 

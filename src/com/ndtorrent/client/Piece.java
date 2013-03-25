@@ -11,6 +11,8 @@ public final class Piece {
 
 	static final long MINUTE = (long) (60 * 1e9);
 
+	private ByteBuffer data;
+
 	private int index;
 	private int piece_length;
 	private int num_blocks;
@@ -19,10 +21,10 @@ public final class Piece {
 
 	private int completed_length;
 
-	private ByteBuffer data;
 	private BitSet available;
 	private BitSet not_requested;
 	private BitSet reserved;
+	// TODO BitSet pending;
 
 	private int mode;
 	private long mode_timeout;
@@ -60,15 +62,23 @@ public final class Piece {
 		return piece_length == completed_length;
 	}
 
-	public void restoreRequested(BitSet requested) {
+	public void restorePendingRequests(BitSet requests) {
 		not_requested.set(0, num_blocks, true);
-		not_requested.andNot(requested);
+		not_requested.andNot(requests);
 		not_requested.andNot(available);
 
-		reserved.and(requested);
+		reserved.and(requests);
 
-		if (requested.isEmpty())
+		if (requests.isEmpty())
 			setSpeedMode(Piece.SPEED_MODE_NONE);
+
+	}
+
+	public BitSet getPendingRequests() {
+		BitSet requests = not_requested.get(0, num_blocks);
+		requests.flip(0, num_blocks);
+		requests.andNot(available);
+		return requests;
 	}
 
 	public void setBlockAsReserved(int index) {

@@ -149,12 +149,23 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
 	}
 
-	public void getRequested(BitSet requested, int piece_index, int block_length) {
+	public BitSet findNotRequested(Piece piece) {
+		BitSet requests = getPendingRequests(piece);
+		requests.or(piece.getAvailableBlocks());
+		requests.flip(0, piece.numBlocks());
+		return requests;
+	}
+
+	public BitSet getPendingRequests(Piece piece) {
+		// TODO make unfulfilled an ordered ArrayList and use binary search to
+		// locate the pieces.
+		BitSet requests = new BitSet(piece.numBlocks());
 		for (Message m : unfulfilled) {
-			if (m.getPieceIndex() == piece_index) {
-				requested.set(m.getBlockBegin() / block_length);
+			if (m.getPieceIndex() == piece.getIndex()) {
+				requests.set(piece.getBlockIndex(m.getBlockBegin()));
 			}
 		}
+		return requests;
 	}
 
 	public void addOutgoingRequests(Piece piece, BitSet blocks) {
@@ -176,15 +187,6 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 			if (!canRequestMore())
 				return;
 		}
-	}
-
-	public BitSet findNotRequested(Piece piece) {
-		int piece_index = piece.getIndex();
-		BitSet requested = new BitSet();
-		getRequested(requested, piece_index, piece.getBlockLength());
-		requested.or(piece.getAvailableBlocks());
-		requested.flip(0, piece.numBlocks());
-		return requested;
 	}
 
 	public void addBitfield(BitSet pieces, int nbits) {

@@ -25,7 +25,14 @@ public class TorrentsModel extends AbstractTableModel {
 
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		return columnIndex != 3 ? Object.class : BarRenderer.class;
+		switch (columnIndex) {
+		case 3:
+			return BarRenderer.class;
+		case 5:
+			return IntervalRenderer.class;
+		default:
+			return Object.class;
+		}
 	}
 
 	@Override
@@ -54,7 +61,7 @@ public class TorrentsModel extends AbstractTableModel {
 		case 4:
 			return getProgressValue(info);
 		case 5:
-			return getCompletionTime(info);
+			return Long.valueOf(info.getCompletionTime());
 		case 6:
 			return String.format("%.1f KB/s", info.getInputRate() / 1000.0);
 		case 7:
@@ -71,14 +78,6 @@ public class TorrentsModel extends AbstractTableModel {
 			return "100.0%";
 		double p = 100.0 * (total - remaining) / total;
 		return String.format("%.1f%%", p > 99.9 ? 99.9 : p);
-	}
-
-	private String getCompletionTime(TorrentInfo info) {
-		long eta = info.getCompletionTime();
-		if (eta >= 0)
-			return String.format("%ds", info.getCompletionTime());
-		else
-			return null;
 	}
 
 }

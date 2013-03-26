@@ -34,6 +34,7 @@ public class TableFrame extends JInternalFrame {
 		table.setShowGrid(false);
 		table.setFillsViewportHeight(true);
 		table.setDefaultRenderer(BarRenderer.class, new BarRenderer());
+		table.setDefaultRenderer(IntervalRenderer.class, new IntervalRenderer());
 		scrollPane.setViewportView(table);
 
 	}
@@ -44,12 +45,6 @@ public class TableFrame extends JInternalFrame {
 
 	public TableModel getTableModel() {
 		return table.getModel();
-	}
-
-	public static String displayDeltaTime(int delta_secs) {
-		// TODO move to a DeltaTimeRender
-		// TODO human readable String
-		return (delta_secs < 0 ? 0 : delta_secs) + "s";
 	}
 
 }

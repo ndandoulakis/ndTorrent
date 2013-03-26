@@ -26,6 +26,16 @@ public class TrackersModel extends AbstractTableModel {
 	}
 
 	@Override
+	public Class<?> getColumnClass(int columnIndex) {
+		switch (columnIndex) {
+		case 2:
+			return IntervalRenderer.class;
+		default:
+			return Object.class;
+		}
+	}
+
+	@Override
 	public int getColumnCount() {
 		return column_names.length;
 	}
@@ -67,9 +77,9 @@ public class TrackersModel extends AbstractTableModel {
 			return new String("OK");
 	}
 
-	private String intervalValue(TrackerInfo info) {
+	private Long intervalValue(TrackerInfo info) {
 		long now = System.nanoTime();
-		int interval = (int) ((now - info.getUpdatedAt()) / 1e9);
-		return TableFrame.displayDeltaTime(info.getInterval() - interval);
+		long interval = (long) ((now - info.getUpdatedAt()) / 1e9);
+		return info.getInterval() - interval;
 	}
 }

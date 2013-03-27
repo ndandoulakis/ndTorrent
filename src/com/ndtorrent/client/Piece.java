@@ -132,10 +132,6 @@ public final class Piece {
 		return index * block_length;
 	}
 
-	public int getBlockLength() {
-		return block_length;
-	}
-
 	public int getBlockLength(int index) {
 		return index + 1 == num_blocks ? tail_length : block_length;
 	}

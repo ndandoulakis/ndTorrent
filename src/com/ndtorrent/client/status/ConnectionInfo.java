@@ -23,7 +23,7 @@ public final class ConnectionInfo {
 	private final boolean is_initiator = true;
 
 	public ConnectionInfo(PeerChannel channel) {
-		address = channel.socket.getRemoteSocketAddress().toString();
+		address = channel.socket.getRemoteIP();
 		id = channel.socket.getInputHandshake().getID();
 		input_rate = channel.socket.inputPerSec();
 		output_rate = channel.socket.outputPerSec();

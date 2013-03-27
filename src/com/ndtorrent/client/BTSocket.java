@@ -36,8 +36,9 @@ public final class BTSocket {
 
 	private long input_total;
 	private long output_total;
-	private TransferRate input_rate = new TransferRate();
-	private TransferRate output_rate = new TransferRate();
+
+	private RollingTotal input_rate = new RollingTotal(5);
+	private RollingTotal output_rate = new RollingTotal(5);
 	// ? use ByteBuffer limit to control the rate
 
 	private long blocks_input_total;
@@ -150,7 +151,7 @@ public final class BTSocket {
 		int n = channel.read(dst);
 		if (n > 0) {
 			input_total += n;
-			input_rate.update(n);
+			input_rate.add(n);
 			if (input_data != null && input_data.position() > 0)
 				if (input_data.get(0) == Message.PIECE)
 					blocks_input_total += n;
@@ -178,7 +179,7 @@ public final class BTSocket {
 		int n = channel.write(src);
 		if (n > 0) {
 			output_total += n;
-			output_rate.update(n);
+			output_rate.add(n);
 		}
 		return n;
 	}
@@ -237,12 +238,17 @@ public final class BTSocket {
 		output_total = 0;
 	}
 
+	public void rollTotals() {
+		input_rate.roll();
+		output_rate.roll();
+	}
+
 	public double inputPerSec() {
-		return input_rate.perSec();
+		return input_rate.average();
 	}
 
 	public double outputPerSec() {
-		return output_rate.perSec();
+		return output_rate.average();
 	}
 
 	public long blocksInputTotal() {

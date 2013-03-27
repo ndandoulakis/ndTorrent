@@ -117,7 +117,6 @@ public final class Peer extends Thread {
 				// restoreRejectedPieces();
 				advertiseAvailablePieces();
 				updateAmInterestedState();
-				rollBlocksTotal();
 				choking();
 				removeFellowSeeders();
 				// update input/output totals
@@ -126,8 +125,8 @@ public final class Peer extends Thread {
 
 				updateTrackerSessions();
 				// update peer Set
-
 				notifyStatusObservers();
+				rollTotals();
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -418,17 +417,18 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void rollBlocksTotal() {
-		double total = 0;
-		long now = System.nanoTime();
+	private void rollTotals() {
+		double avg = 0;
 		for (PeerChannel channel : channels) {
-			channel.rollBlocksTotal(now);
-			total += channel.getBlocksTotal();
+			channel.socket.rollTotals();
+
+			avg += channel.avgBlocksTotal();
+			channel.rollBlocksTotal();
 		}
 
-		avg_total.roll(now);
+		avg_total.roll();
 		if (!channels.isEmpty())
-			avg_total.add(total / PeerChannel.ROLLING_SECS);
+			avg_total.add(avg);
 	}
 
 	private void choking() {
@@ -656,7 +656,7 @@ public final class Peer extends Thread {
 			// Once every 4s
 			long now = System.nanoTime();
 			if (now >= eta_timeout) {
-				double avg = avg_total.getTotal() / 5;
+				double avg = avg_total.average();
 				eta = 1 + (avg > 0 ? (long) (0.5 + remaining / avg) : -1);
 				eta_timeout = now + 4 * SECOND;
 			}

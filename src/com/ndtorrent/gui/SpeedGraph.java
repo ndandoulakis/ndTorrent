@@ -29,16 +29,14 @@ public final class SpeedGraph extends JComponent {
 	}
 
 	public void addInputRate(double rate) {
-		long now = System.nanoTime();
-		input_rate.roll(now);
+		input_rate.roll();
 		input_rate.add(rate);
 
 		repaint();
 	}
 
 	public void addOutputRate(double rate) {
-		long now = System.nanoTime();
-		output_rate.roll(now);
+		output_rate.roll();
 		output_rate.add(rate);
 
 		repaint();

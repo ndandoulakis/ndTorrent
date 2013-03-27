@@ -11,7 +11,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 
 	// A rolling total longer than the choking round can make the
 	// rating a bit more accurate due to data transmission delays.
-	static final int ROLLING_SECS = 15;
+	private static final int ROLLING_SECS = 15;
 
 	public BTSocket socket;
 
@@ -52,7 +52,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	@Override
 	public int compareTo(PeerChannel other) {
 		// Blocks total comparison for descending order, c2 > c1
-		return (int) Math.signum(other.getBlocksTotal() - getBlocksTotal());
+		return (int) Math.signum(other.avgBlocksTotal() - avgBlocksTotal());
 	}
 
 	public int numAvailablePieces() {
@@ -67,21 +67,21 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		return unfulfilled.size();
 	}
 
-	public void rollBlocksTotal(long current_time) {
-		blocks_total.roll(current_time);
+	public void rollBlocksTotal() {
+		blocks_total.roll();
 		blocks_total.add(socket.blocksInputTotal());
 		socket.clearBlocksInputTotal();
 	}
 
-	public double getBlocksTotal() {
-		return blocks_total.getTotal();
+	public double avgBlocksTotal() {
+		return blocks_total.average();
 	}
 
 	public int getSpeedMode() {
-		double total = getBlocksTotal();
-		if (total < ROLLING_SECS * 2000)
+		double avg = avgBlocksTotal();
+		if (avg < 2000)
 			return Piece.SPEED_MODE_SLOW;
-		if (total < ROLLING_SECS * 4000)
+		if (avg < 4000)
 			return Piece.SPEED_MODE_MEDIUM;
 		return Piece.SPEED_MODE_FAST;
 	}
@@ -145,7 +145,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
-		final int REQUESTS = 1 + (int) (getBlocksTotal() / (ROLLING_SECS * 8000));
+		final int REQUESTS = 1 + (int) (avgBlocksTotal() / 8000);
 		return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
 	}
 

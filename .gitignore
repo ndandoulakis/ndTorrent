@@ -12,6 +12,7 @@ tmp/
 torrents/
 TODO.txt
 test*
+*.torrent
 *.tmp
 *.bak
 *.swp

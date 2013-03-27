@@ -1,11 +1,11 @@
 #ndTorrent
 
-Nick Dandoulakis
-<br>
-ndandoulakis@hotmail.com
-
 ###a BitTorrent client written in Java
 *early alpha version*
+
+The graphical interface is incomplete, torrents can be added only through code.
+
+![](http://nick-d.appspot.com/ndtorrent_a0.png)
 
 ###License
 

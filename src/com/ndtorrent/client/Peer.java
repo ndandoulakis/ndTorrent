@@ -41,9 +41,8 @@ public final class Peer extends Thread {
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
 	// Estimated time of completion.
-	private RollingTotal avg_total = new RollingTotal(5);
-	private long eta_timeout;
 	private long eta;
+	private long eta_timeout;
 
 	public Peer(ClientInfo client_info, MetaInfo meta_info) {
 		super("PEER-THREAD");
@@ -84,6 +83,8 @@ public final class Peer extends Thread {
 
 		while (!stop_requested) {
 			try {
+				// High priority //
+
 				// a Selector doesn't clear the selected keys so it's our
 				// responsibility to do it.
 				removeBrokenSockets();
@@ -97,7 +98,6 @@ public final class Peer extends Thread {
 				channel_selector.selectedKeys().clear();
 				channel_selector.select(100);
 
-				// High priority //
 				processIncomingMessages();
 				processOutgoingMessages();
 				requestMoreBlocks();
@@ -418,17 +418,10 @@ public final class Peer extends Thread {
 	}
 
 	private void rollTotals() {
-		double avg = 0;
 		for (PeerChannel channel : channels) {
 			channel.socket.rollTotals();
-
-			avg += channel.avgBlocksTotal();
 			channel.rollBlocksTotal();
 		}
-
-		avg_total.roll();
-		if (!channels.isEmpty())
-			avg_total.add(avg);
 	}
 
 	private void choking() {
@@ -480,6 +473,8 @@ public final class Peer extends Thread {
 						if (priority == 0) {
 							boolean fast_channel = channel_mode == Piece.SPEED_MODE_FAST;
 
+							// TODO higher priority: participated && has pending
+							// requests
 							if (!(fast_channel && channel.participatedIn(index)))
 								continue;
 
@@ -656,8 +651,8 @@ public final class Peer extends Thread {
 			// Once every 4s
 			long now = System.nanoTime();
 			if (now >= eta_timeout) {
-				double avg = avg_total.average();
-				eta = 1 + (avg > 0 ? (long) (0.5 + remaining / avg) : -1);
+				double rate = input_rate;
+				eta = 1 + (rate > 0 ? (long) (0.5 + remaining / rate) : -1);
 				eta_timeout = now + 4 * SECOND;
 			}
 		}

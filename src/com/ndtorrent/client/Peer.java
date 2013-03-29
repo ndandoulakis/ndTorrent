@@ -276,6 +276,8 @@ public final class Peer extends Thread {
 		}
 
 		// Multiple connections with same IP are not allowed.
+		// An accidental cyclic connection will be terminated
+		// since one of the two end-points will be closed.
 		String ip = socket.getRemoteIP();
 		for (PeerChannel channel : channels) {
 			// incoming counter

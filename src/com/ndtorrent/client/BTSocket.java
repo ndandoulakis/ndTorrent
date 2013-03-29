@@ -1,8 +1,6 @@
 package com.ndtorrent.client;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -47,9 +45,9 @@ public final class BTSocket {
 		this.channel = channel;
 
 		try {
+			channel.configureBlocking(false);
 			channel.socket().setTcpNoDelay(true);
 			channel.socket().setSendBufferSize(TCP_SEND_BUFFER_SIZE);
-			channel.configureBlocking(false);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -275,16 +273,16 @@ public final class BTSocket {
 		return last_output_at;
 	}
 
+	public int getLocalPort() {
+		return channel.socket().getLocalPort();
+	}
+
 	public String getRemoteIP() {
 		return channel.socket().getInetAddress().getHostAddress();
 	}
 
-	public InetAddress getInetAddress() {
-		return channel.socket().getInetAddress();
-	}
-
-	public SocketAddress getRemoteSocketAddress() {
-		return channel.socket().getRemoteSocketAddress();
+	public int getRemotePort() {
+		return channel.socket().getPort();
 	}
 
 	public boolean isOpen() {
@@ -292,7 +290,16 @@ public final class BTSocket {
 		// point has closed the connection.
 		// SocketChannel.isConnected() on the other hand seems to
 		// reflect the termination if at least one end point is closed.
-		return !is_closed && channel.isConnected();
+		return !is_closed
+				&& (channel.isConnectionPending() || channel.isConnected());
+	}
+
+	public boolean finishConnect() {
+		try {
+			return channel.finishConnect();
+		} catch (IOException e) {
+		}
+		return false;
 	}
 
 	public void close() {

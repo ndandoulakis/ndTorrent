@@ -1,17 +1,26 @@
 package com.ndtorrent.client;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.ndtorrent.client.status.ConnectionInfo;
@@ -31,16 +40,21 @@ public final class Peer extends Thread {
 	private MetaInfo meta;
 	private Torrent torrent;
 	private ClientInfo client_info;
+	private Socket socket; // reusable address for outgoing connections
 	private Selector channel_selector;
 	private Selector socket_selector;
 
 	private List<PeerChannel> channels = new LinkedList<PeerChannel>();
 	private List<Session> sessions = new ArrayList<Session>();
+	private Map<String, Long> updated_sessions = new HashMap<String, Long>();
 
-	// Expose status through local Data Transfer Object messages.
+	private Set<String> active_ips = new HashSet<String>();
+	private Set<InetSocketAddress> known = new LinkedHashSet<InetSocketAddress>();
+
+	// External observers receive local DTO messages (i.e. GUI).
 	private List<StatusObserver> observers = new CopyOnWriteArrayList<StatusObserver>();
 
-	// Estimated time of completion.
+	// Estimated time of torrent arrival / completion.
 	private long eta;
 	private long eta_timeout;
 
@@ -71,6 +85,9 @@ public final class Peer extends Thread {
 	@Override
 	public void run() {
 		try {
+			socket = new Socket();
+			socket.setReuseAddress(true);
+			socket.bind(null);
 			channel_selector = Selector.open();
 			socket_selector = Selector.open();
 			torrent.open();
@@ -90,7 +107,7 @@ public final class Peer extends Thread {
 				removeBrokenSockets();
 				socket_selector.selectedKeys().clear();
 				socket_selector.selectNow();
-				// processConnectMessages();
+				processPendingConnections();
 				processHandshakeMessages();
 
 				removeBrokenChannels();
@@ -112,20 +129,21 @@ public final class Peer extends Thread {
 
 				last_time = now;
 
+				removeFellowSeeders();
 				cancelDelayedRequests();
 				restoreBrokenRequests();
 				// restoreRejectedPieces();
-				advertiseAvailablePieces();
 				updateAmInterestedState();
 				choking();
-				removeFellowSeeders();
-				// update input/output totals
+				advertiseAvailablePieces();
 				keepConnectionsAlive();
-				spawnOutgoingConnections();
 
 				updateTrackerSessions();
-				// update peer Set
+				updateKnownAddresses();
+				spawnOutgoingConnections();
+
 				notifyStatusObservers();
+
 				rollTotals();
 
 			} catch (IOException e) {
@@ -142,17 +160,11 @@ public final class Peer extends Thread {
 	private void updateTrackerSessions() {
 		long now = System.nanoTime();
 		for (Session session : sessions) {
-			if (session.isUpdating())
-				continue;
-			if (session.isConnectionTimeout())
-				continue;
-			if (session.isConnectionError())
-				continue;
-			if (session.isTrackerError())
+			if (session.isUpdating() || session.isUpdateError())
 				continue;
 
 			long interval = now - session.updatedAt();
-			if (interval < session.getInterval() * 1e9)
+			if (interval < session.getInterval() * SECOND)
 				continue;
 
 			Event event = session.lastEvent();
@@ -162,6 +174,30 @@ public final class Peer extends Thread {
 				event = Event.REGULAR;
 
 			session.update(event, 0, 0, torrent.getRemainingLength());
+		}
+	}
+
+	private void updateKnownAddresses() {
+		for (Session session : sessions) {
+			if (session.isUpdating() || session.isUpdateError())
+				continue;
+			String url = session.getUrl();
+			Long updated_at = updated_sessions.get(url);
+			if (updated_at != null && updated_at.equals(session.updatedAt()))
+				continue;
+			updated_sessions.put(url, session.updatedAt());
+			for (InetSocketAddress address : session.getPeers()) {
+				known.add(address);
+			}
+		}
+	}
+
+	private void processPendingConnections() {
+		for (SelectionKey key : socket_selector.selectedKeys()) {
+			if (!key.isValid() || !key.isConnectable())
+				continue;
+			BTSocket socket = (BTSocket) key.attachment();
+			socket.finishConnect();
 		}
 	}
 
@@ -196,6 +232,7 @@ public final class Peer extends Thread {
 			BTSocket socket = (BTSocket) key.attachment();
 			if (socket.isHandshakeExpired() || socket.isError()
 					|| !socket.isOpen()) {
+
 				key.cancel();
 				socket.close();
 			}
@@ -231,6 +268,8 @@ public final class Peer extends Thread {
 	}
 
 	private void addReadyConnection(BTSocket socket) {
+		// ? keep every address (unique IPs) that we can't accept
+		// due to max connections limit, for future outgoing connections.
 		if (channels.size() >= MAX_CHANNELS) {
 			socket.close();
 			return;
@@ -249,15 +288,13 @@ public final class Peer extends Thread {
 
 		PeerChannel channel = new PeerChannel();
 		channel.socket = socket;
-		channel.is_initiator = true; // local_port != torrent_port
+		channel.setAmInitiator(socket.getLocalPort() == this.socket
+				.getLocalPort());
 		channel.addBitfield(torrent.getAvailablePieces(), torrent.numPieces());
 
 		try {
 			socket.register(channel_selector, SelectionKey.OP_READ, channel);
 			channels.add(channel);
-			System.out
-					.printf("incoming: %s\n", socket.getRemoteSocketAddress());
-
 		} catch (IOException e) {
 			e.printStackTrace();
 			socket.close();
@@ -318,6 +355,7 @@ public final class Peer extends Thread {
 		channels.clear();
 
 		try {
+			socket.close();
 			channel_selector.close();
 			socket_selector.close();
 		} catch (IOException e) {
@@ -394,14 +432,28 @@ public final class Peer extends Thread {
 	}
 
 	private void spawnOutgoingConnections() {
-		// ? keep every address (unique IPs) that we can't accept
-		// due to max connections limit, for future outgoing connections.
-
-		// Check channel_selector size + socket_selector size.
-		// Consume the list of peer addresses in a round-robin manner.
-		// Give priority to peers not yet collaborated
-		// Doesn't matter if the list gets empty. It'll filled up again
-		// through the peer tracking phase, and with the incoming connections.
+		int nsockets = socket_selector.keys().size();
+		int nchannels = channels.size();
+		if (nsockets + nchannels >= MAX_CHANNELS)
+			return;
+		if (known.isEmpty())
+			return;
+		Iterator<InetSocketAddress> iter = known.iterator();
+		SocketAddress remote_address = iter.next();
+		iter.remove();
+		try {
+			SocketChannel channel = SocketChannel.open();
+			channel.socket().setReuseAddress(true);
+			channel.socket().bind(this.socket.getLocalSocketAddress());
+			BTSocket socket = new BTSocket(channel);
+			if (channel.connect(remote_address)) {
+				channel.finishConnect();
+			}
+			channel.register(socket_selector, SelectionKey.OP_CONNECT
+					| SelectionKey.OP_READ | SelectionKey.OP_WRITE, socket);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void advertiseAvailablePieces() {

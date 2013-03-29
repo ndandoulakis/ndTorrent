@@ -20,7 +20,7 @@ public final class ConnectionInfo {
 	private final boolean is_optimistic;
 	private final boolean is_former_optimistic;
 	private final boolean am_snubbed;
-	private final boolean is_initiator = true;
+	private final boolean am_initiator;
 
 	public ConnectionInfo(PeerChannel channel) {
 		address = channel.socket.getRemoteIP();
@@ -38,6 +38,7 @@ public final class ConnectionInfo {
 		is_optimistic = channel.isOptimistic();
 		is_former_optimistic = channel.isFormerOptimistic();
 		am_snubbed = channel.amSnubbed();
+		am_initiator = channel.amInitiator();
 	}
 
 	public String getIP() {
@@ -101,7 +102,7 @@ public final class ConnectionInfo {
 	}
 
 	public boolean isInitiator() {
-		return is_initiator;
+		return am_initiator;
 	}
 
 }

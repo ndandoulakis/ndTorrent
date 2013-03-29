@@ -41,11 +41,11 @@ public final class TrackerInfo {
 	public int getInterval() {
 		return interval;
 	}
-	
+
 	public long getUpdatedAt() {
 		return updated_at;
 	}
-	
+
 	public boolean isUpdating() {
 		return is_updating;
 	}

@@ -19,7 +19,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	private BitSet advertised = new BitSet();
 	private BitSet participated = new BitSet(); // Pieces received
 
-	public boolean is_initiator;
+	private boolean am_initiator;
 	public boolean is_banned;
 	public boolean is_questionable; // participated in rejected pieces
 
@@ -208,6 +208,14 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 			outgoing.add(Message.newHavePiece(i));
 		}
 		advertised.or(pieces);
+	}
+
+	public void setAmInitiator(boolean initiator) {
+		am_initiator = initiator;
+	}
+
+	public boolean amInitiator() {
+		return am_initiator;
 	}
 
 	public void setAmSnubbed(boolean snubbed) {

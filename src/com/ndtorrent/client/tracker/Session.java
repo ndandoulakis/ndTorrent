@@ -46,6 +46,18 @@ public abstract class Session {
 
 	public abstract long updatedAt();
 
+	public final boolean isUpdateError() {
+		if (isUpdating())
+			return false;
+		if (isConnectionTimeout())
+			return true;
+		if (isConnectionError())
+			return true;
+		if (isTrackerError())
+			return true;
+		return false;
+	}
+
 	public abstract boolean isConnectionError();
 
 	public abstract boolean isConnectionTimeout();

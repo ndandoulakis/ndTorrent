@@ -45,7 +45,12 @@ public final class Client implements ClientInfo {
 	}
 
 	public void close() {
-		server.close();
+		try {
+			server.close();
+			server.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		for (Peer peer : peers.values()) {
 			peer.close();
 		}

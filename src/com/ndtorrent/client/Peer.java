@@ -7,7 +7,6 @@ import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -399,24 +398,9 @@ public final class Peer extends Thread {
 	}
 
 	private void cancelDelayedRequests() {
-		// Since it's possible a remote peer to discard any request,
-		// all pending requests are canceled when the corresponding
-		// piece is timed out.
-
-		Collection<Piece> partial_entries = torrent.getPartialPieces();
-		long now = System.nanoTime();
-		for (Piece piece : partial_entries) {
-			if (now > piece.getSpeedModeTimeout()) {
-				int index = piece.getIndex();
-				for (PeerChannel channel : channels) {
-					if (channel.hasPiece(index)) {
-						// We can call this even if there are no requests.
-						channel.cancelPendingRequests(index, null);
-					}
-				}
-				piece.setSpeedMode(Piece.SPEED_MODE_NONE);
-				piece.resetSpeedModeTimeout();
-			}
+		for (PeerChannel channel : channels) {
+			final int TIMED_OUT = -1;
+			channel.cancelPendingRequests(TIMED_OUT, null);
 		}
 	}
 
@@ -440,22 +424,21 @@ public final class Peer extends Thread {
 			return;
 		if (known.isEmpty())
 			return;
+
 		Iterator<InetSocketAddress> iter = known.iterator();
-		SocketAddress remote_address = iter.next();
+		SocketAddress remote = iter.next();
 		iter.remove();
+		BTSocket socket = null;
 		try {
-			SocketChannel channel = SocketChannel.open();
-			channel.socket().setReuseAddress(true);
-			channel.socket().bind(this.socket.getLocalSocketAddress());
-			BTSocket socket = new BTSocket(channel);
-			if (channel.connect(remote_address)) {
-				channel.finishConnect();
-			}
-			channel.register(socket_selector, SelectionKey.OP_CONNECT
+			socket = new BTSocket(this.socket.getLocalSocketAddress());
+			socket.connect(remote);
+			socket.register(socket_selector, SelectionKey.OP_CONNECT
 					| SelectionKey.OP_READ | SelectionKey.OP_WRITE, socket);
 		} catch (IOException e) {
-			e.printStackTrace();
+			if (socket != null)
+				socket.close();
 		}
+
 	}
 
 	private void advertiseAvailablePieces() {
@@ -500,55 +483,23 @@ public final class Peer extends Thread {
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested())
 				continue;
-			// Speed mode helps to keep the number of partial pieces low
-			// (piling up) by preventing the mix of SLOW and FAST requests.
-			int channel_mode = channel.getSpeedMode();
-			for (int priority = 0; priority <= 1; priority++) {
-				for (Piece piece : partial_entries) {
-					if (!channel.canRequestMore())
-						break;
-
-					if (!piece.hasPendingRequests())
-						piece.setSpeedMode(Piece.SPEED_MODE_NONE);
-
-					int index = piece.getIndex();
-					if (channel.hasPiece(index)) {
-						int piece_mode = piece.getSpeedMode();
-						boolean shared_piece = channel.isSharing(piece);
-
-						if (piece_mode != channel_mode && !shared_piece)
-							piece.setSpeedMode(channel_mode);
-
-						if (piece_mode == Piece.SPEED_MODE_NONE)
-							piece.setSpeedMode(channel_mode);
-						else if (piece_mode != channel_mode)
-							continue;
-
-						if (priority == 0) {
-							boolean fast_channel = channel_mode == Piece.SPEED_MODE_FAST;
-
-							// TODO higher priority: participated && has pending
-							// requests
-							if (!(fast_channel && channel.participatedIn(index)))
-								continue;
-
-							if (!(!fast_channel && shared_piece))
-								continue;
-						}
-
-						channel.requestToTheMax(piece, piece.getNotRequested());
-					}
+			for (Piece piece : partial_entries) {
+				if (!channel.canRequestMore())
+					break;
+				if (channel.hasPiece(piece.getIndex())) {
+					channel.requestToTheMax(piece, piece.getNotRequested());
 				}
 			}
-
 			if (channel.canRequestMore()) {
 				int index = begin ? selectRandomPiece(channel)
 						: selectRarePiece(channel);
 				if (index < 0)
 					continue;
-				torrent.registerPiece(index);
+				Piece piece = torrent.registerPiece(index);
+				channel.requestToTheMax(piece, piece.getNotRequested());
 				// Update partial_entries and possibly prevent next channels
-				// from selecting a new piece, thus to avoid piling up pieces.
+				// from selecting a new piece, thus to avoid piling up
+				// pieces.
 				partial_entries = torrent.getPartialPieces();
 			}
 		}

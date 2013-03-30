@@ -27,8 +27,8 @@ public final class Message {
 		return new Message(data);
 	}
 
-	public void updateTimestamp() {
-		timestamp = System.nanoTime();
+	public void setTimestamp(long t) {
+		timestamp = t;
 	}
 
 	public long getTimestamp() {

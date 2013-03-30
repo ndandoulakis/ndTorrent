@@ -30,7 +30,7 @@ public final class Piece {
 	private long mode_timeout;
 
 	public Piece(int index, int length) {
-		this(index, length, 16 * 1024);
+		this(index, length, 2 * 1024);
 	}
 
 	public Piece(int index, int piece_length, int block_length) {

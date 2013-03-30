@@ -1,6 +1,7 @@
 package com.ndtorrent.client;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -24,11 +25,11 @@ public final class BTSocket {
 	private HandshakeMsg input_handshake = HandshakeMsg.newEmptyHandshake();
 	private HandshakeMsg output_handshake;
 
-	private boolean is_input_error; // unrecoverable, input stream has closed
+	private boolean is_input_error; // input stream has closed or MAX_DATA_SIZE
 	private ByteBuffer input_data;
 	private ByteBuffer input_prefix = ByteBuffer.allocate(4);
 
-	private boolean is_output_error; // unrecoverable
+	private boolean is_output_error;
 	private ByteBuffer output_data;
 	private ByteBuffer output_prefix = ByteBuffer.allocate(4);
 
@@ -57,6 +58,14 @@ public final class BTSocket {
 		joined_at = now;
 		last_input_at = now;
 		last_output_at = now;
+	}
+
+	public BTSocket(SocketAddress bindpoint) throws IOException {
+		// Bind-point must be reusable.
+
+		this(SocketChannel.open());
+		channel.socket().setReuseAddress(true);
+		channel.socket().bind(bindpoint);
 	}
 
 	public boolean hasOutputHandshake() {
@@ -292,6 +301,12 @@ public final class BTSocket {
 		// reflect the termination if at least one end point is closed.
 		return !is_closed
 				&& (channel.isConnectionPending() || channel.isConnected());
+	}
+
+	public void connect(SocketAddress remote) throws IOException {
+		if (channel.connect(remote)) {
+			channel.finishConnect();
+		}
 	}
 
 	public boolean finishConnect() {

@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public final class PeerChannel implements Comparable<PeerChannel> {
-	static final int MAX_REQUESTS = 255;
+	static final int MAX_REQUESTS = 155;
 
 	// A rolling total longer than the choking round can make the
 	// rating a bit more accurate due to data transmission delays.
@@ -145,8 +145,12 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	public boolean canRequestMore() {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
-		final int REQUESTS = 1 + (int) (avgBlocksTotal() / 8000);
-		return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
+		if (avgBlocksTotal() < 1000) {
+			return numOutgoingRequests() < 1;
+		} else {
+			final int REQUESTS = 1 + (int) (avgBlocksTotal() / 1000);
+			return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
+		}
 	}
 
 	public boolean isSharing(Piece piece) {
@@ -178,6 +182,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	public void requestToTheMax(Piece piece, BitSet blocks) {
 		if (!canRequestMore())
 			return;
+		long now = System.nanoTime();
 		int start_bit = blocks.nextSetBit(0);
 		for (int i = start_bit; i >= 0; i = blocks.nextSetBit(i + 1)) {
 			// May be set multiple times on end-game.
@@ -188,6 +193,7 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 			int offset = piece.getBlockOffset(i);
 			int length = piece.getBlockLength(i);
 			Message m = Message.newBlockRequest(index, offset, length);
+			m.setTimestamp((long) (now + 10 * 1e9));
 			outgoing.add(m);
 			unfulfilled.add(m);
 			if (!canRequestMore())
@@ -352,13 +358,18 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 	}
 
 	public void cancelPendingRequests(int piece_index, BitSet blocks) {
-		// To remove every matching piece index, pass null blocks.
+		// To remove timed out requests, pass piece_index -1 and null blocks.
+		// To remove every request matching the piece_index, pass null blocks.
+		// To remove specific requests, pass the piece_index and the blocks.
+
+		long now = System.nanoTime();
 
 		Iterator<Message> iter;
 		iter = unfulfilled.iterator();
 		while (iter.hasNext()) {
 			Message m = iter.next();
-			if (m.getPieceIndex() == piece_index) {
+			boolean expired = piece_index < 0 && now >= m.getTimestamp();
+			if (expired || m.getPieceIndex() == piece_index) {
 				int offset = m.getBlockBegin();
 				int length = m.getBlockLength();
 				int block_index = offset / length;
@@ -371,7 +382,9 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		iter = outgoing.iterator();
 		while (iter.hasNext()) {
 			Message m = iter.next();
-			if (m.isBlockRequest() && m.getPieceIndex() == piece_index) {
+			boolean expired = piece_index < 0 && now >= m.getTimestamp();
+			if (m.isBlockRequest()
+					&& (expired || m.getPieceIndex() == piece_index)) {
 				int block_index = m.getBlockBegin() / m.getBlockLength();
 				if (blocks != null && !blocks.get(block_index))
 					continue;

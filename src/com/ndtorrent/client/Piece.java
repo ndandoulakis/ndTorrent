@@ -170,7 +170,7 @@ public final class Piece {
 		int length = block.getPayloadLength() - 2 * 4;
 		int offset = block.getBlockBegin();
 		if (!validBlockRegion(offset, length))
-			throw new IllegalArgumentException();
+			return;
 
 		int block_index = getBlockIndex(offset);
 

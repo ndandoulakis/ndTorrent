@@ -514,16 +514,15 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		while (iter.hasNext()) {
 			Message request = iter.next();
 			if (m.sameBlockRegion(request)) {
-				unprocessed_pieces.add(m);
-				participated.set(m.getPieceIndex());
 				iter.remove();
-				return;
+				break;
 			}
 		}
-		// The corresponding unfulfilled request wasn't found.
-		// We discard the piece but we don't attempt to close the socket.
-		// A valid case this can happen is when the client just became not
-		// interested in the peer and the piece had already been sent.
+		// If an unfulfilled request wasn't found, the request probably was
+		// canceled because the block is delayed. We enqueue it for further
+		// processing anyway.
+		unprocessed_pieces.add(m);
+		participated.set(m.getPieceIndex());
 	}
 
 	private void onCancel(Message m) {

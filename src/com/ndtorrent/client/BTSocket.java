@@ -191,6 +191,10 @@ public final class BTSocket {
 		return n;
 	}
 
+	public boolean hasPartialInputMesssage() {
+		return input_data != null && input_data.hasRemaining();
+	}
+
 	public boolean hasInputMessage() {
 		return input_data != null && !input_data.hasRemaining();
 	}

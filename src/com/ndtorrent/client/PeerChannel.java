@@ -146,7 +146,8 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		// A small number of pipelined requests, i.e. 10, on fast channels,
 		// can result to bad download rates even on local connections!
 		if (avgBlocksTotal() < 1000) {
-			return numOutgoingRequests() < 1;
+			return !socket.hasPartialInputMesssage()
+					&& numOutgoingRequests() < 1;
 		} else {
 			final int REQUESTS = 1 + (int) (avgBlocksTotal() / 1000);
 			return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);

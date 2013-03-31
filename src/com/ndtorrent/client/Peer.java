@@ -483,13 +483,17 @@ public final class Peer extends Thread {
 		for (PeerChannel channel : channels) {
 			if (channel.amChoked() || !channel.amInterested())
 				continue;
-			for (Piece piece : partial_entries) {
-				if (!channel.canRequestMore())
-					break;
-				if (channel.hasPiece(piece.getIndex())) {
-					channel.requestToTheMax(piece, piece.getNotRequested());
+			for (int priority = 0; priority <= 1; priority++)
+				for (Piece piece : partial_entries) {
+					if (!channel.canRequestMore())
+						break;
+					int index = piece.getIndex();
+					if (channel.hasPiece(index)) {
+						if (priority == 0 && !channel.participatedIn(index))
+							continue;
+						channel.requestToTheMax(piece, piece.getNotRequested());
+					}
 				}
-			}
 			if (channel.canRequestMore()) {
 				int index = begin ? selectRandomPiece(channel)
 						: selectRarePiece(channel);

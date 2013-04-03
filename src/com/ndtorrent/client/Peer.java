@@ -19,7 +19,9 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.ndtorrent.client.status.ConnectionInfo;
@@ -43,6 +45,7 @@ public final class Peer extends Thread {
 	private Selector channel_selector;
 	private Selector socket_selector;
 
+	private Queue<BTSocket> pending = new ConcurrentLinkedQueue<BTSocket>();
 	private List<PeerChannel> channels = new LinkedList<PeerChannel>();
 	private List<Session> sessions = new ArrayList<Session>();
 	private Map<String, Long> updated_sessions = new HashMap<String, Long>();
@@ -100,13 +103,9 @@ public final class Peer extends Thread {
 		while (!stop_requested) {
 			try {
 				// High priority //
-
-				// a Selector doesn't clear the selected keys so it's our
-				// responsibility to do it.
-				removeBrokenSockets();
 				socket_selector.selectedKeys().clear();
 				socket_selector.selectNow();
-				processPendingConnections();
+				processConnectOperations();
 				processHandshakeMessages();
 
 				removeBrokenChannels();
@@ -128,6 +127,8 @@ public final class Peer extends Thread {
 
 				last_time = now;
 
+				registerPendingSockets();
+				removeBrokenSockets();
 				removeFellowSeeders();
 				cancelDelayedRequests();
 				restoreBrokenRequests();
@@ -191,7 +192,18 @@ public final class Peer extends Thread {
 		}
 	}
 
-	private void processPendingConnections() {
+	private void registerPendingSockets() {
+		for (BTSocket socket : pending) {
+			try {
+				socket.register(socket_selector, SelectionKey.OP_CONNECT
+						| SelectionKey.OP_READ | SelectionKey.OP_WRITE, socket);
+			} catch (ClosedChannelException e) {
+			}
+		}
+		pending.clear();
+	}
+
+	private void processConnectOperations() {
 		for (SelectionKey key : socket_selector.selectedKeys()) {
 			if (!key.isValid() || !key.isConnectable())
 				continue;
@@ -252,16 +264,12 @@ public final class Peer extends Thread {
 		}
 	}
 
-	public boolean addIncomingConnection(BTSocket socket) {
+	public boolean addIncomingConnection(final BTSocket socket) {
 		if (!socket.hasInputHandshake())
 			return false;
 		HandshakeMsg msg = socket.getInputHandshake();
 		if (msg.getInfoHash().equals(meta.getInfoHash())) {
-			try {
-				return socket.register(socket_selector, SelectionKey.OP_WRITE,
-						socket) != null;
-			} catch (ClosedChannelException e) {
-			}
+			return pending.add(socket);
 		}
 		return false;
 	}
@@ -345,6 +353,11 @@ public final class Peer extends Thread {
 	}
 
 	private void closeConnections() {
+		for (BTSocket socket : pending) {
+			socket.close();
+		}
+		pending.clear();
+
 		for (SelectionKey key : socket_selector.keys()) {
 			BTSocket socket = (BTSocket) key.attachment();
 			socket.close();
@@ -432,8 +445,7 @@ public final class Peer extends Thread {
 		try {
 			socket = new BTSocket(this.socket.getLocalSocketAddress());
 			socket.connect(remote);
-			socket.register(socket_selector, SelectionKey.OP_CONNECT
-					| SelectionKey.OP_READ | SelectionKey.OP_WRITE, socket);
+			pending.add(socket);
 		} catch (IOException e) {
 			if (socket != null)
 				socket.close();

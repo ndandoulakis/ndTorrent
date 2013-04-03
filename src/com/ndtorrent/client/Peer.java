@@ -117,7 +117,7 @@ public final class Peer extends Thread {
 				processIncomingMessages();
 				processOutgoingMessages();
 				requestMoreBlocks();
-				cancelEndGameRequests();
+				// cancelEndGameRequests();
 				requestEndGameBlocks();
 
 				// Low priority //
@@ -339,7 +339,7 @@ public final class Peer extends Thread {
 
 		Collection<Piece> partial_entries = torrent.getPartialPieces();
 		for (PeerChannel channel : channels) {
-			channel.cancelRequestsExcept(partial_entries);
+			// channel.cancelRequestsExcept(partial_entries);
 			channel.cancelAvailableBlocks(partial_entries);
 		}
 	}
@@ -399,7 +399,7 @@ public final class Peer extends Thread {
 
 	private void cancelDelayedRequests() {
 		for (PeerChannel channel : channels) {
-			final int TIMED_OUT = -1;
+			final Piece TIMED_OUT = null;
 			channel.cancelPendingRequests(TIMED_OUT, null);
 		}
 	}
@@ -491,7 +491,8 @@ public final class Peer extends Thread {
 					if (channel.hasPiece(index)) {
 						if (priority == 0 && !channel.participatedIn(index))
 							continue;
-						channel.requestToTheMax(piece, piece.getNotRequested());
+						channel.addMaximumRequests(piece,
+								piece.getNotRequested());
 					}
 				}
 			if (channel.canRequestMore()) {
@@ -500,10 +501,9 @@ public final class Peer extends Thread {
 				if (index < 0)
 					continue;
 				Piece piece = torrent.registerPiece(index);
-				channel.requestToTheMax(piece, piece.getNotRequested());
+				channel.addMaximumRequests(piece, piece.getNotRequested());
 				// Update partial_entries and possibly prevent next channels
-				// from selecting a new piece, thus to avoid piling up
-				// pieces.
+				// from selecting a new piece, and avoid piling up pieces.
 				partial_entries = torrent.getPartialPieces();
 			}
 		}
@@ -527,7 +527,7 @@ public final class Peer extends Thread {
 					break;
 				BitSet blocks = channel.findNotRequested(piece);
 				blocks.andNot(piece.getReservedBlocks());
-				channel.requestToTheMax(piece, blocks);
+				channel.addMaximumRequests(piece, blocks);
 			}
 			if (!channel.canRequestMore())
 				continue;

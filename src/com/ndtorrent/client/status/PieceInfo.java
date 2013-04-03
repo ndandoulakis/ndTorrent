@@ -9,7 +9,6 @@ public final class PieceInfo {
 	private final int index;
 	private final int length;
 	private final int num_blocks;
-	private final int mode;
 	private final BitSet available;
 	private final BitSet requested;
 
@@ -17,7 +16,6 @@ public final class PieceInfo {
 		index = piece.getIndex();
 		length = piece.getLength();
 		num_blocks = piece.numBlocks();
-		mode = piece.getSpeedMode();
 		available = piece.getAvailableBlocks();
 		requested = (BitSet) piece.getNotRequested().clone();
 		requested.flip(0, num_blocks);
@@ -34,10 +32,6 @@ public final class PieceInfo {
 
 	public int numBlocks() {
 		return num_blocks;
-	}
-
-	public int getSpeedMode() {
-		return mode;
 	}
 
 	public int numAvailableBlocks() {

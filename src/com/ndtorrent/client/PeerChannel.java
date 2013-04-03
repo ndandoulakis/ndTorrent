@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public final class PeerChannel implements Comparable<PeerChannel> {
-	static final int MAX_REQUESTS = 155;
+	static final int MAX_REQUESTS = 255;
 
 	// A rolling total longer than the choking round can make the
 	// rating a bit more accurate due to data transmission delays.
@@ -77,15 +77,6 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		return blocks_total.average();
 	}
 
-	public int getSpeedMode() {
-		double avg = avgBlocksTotal();
-		if (avg < 2000)
-			return Piece.SPEED_MODE_SLOW;
-		if (avg < 4000)
-			return Piece.SPEED_MODE_MEDIUM;
-		return Piece.SPEED_MODE_FAST;
-	}
-
 	public void processIncomingMessages() {
 		receiveIncoming();
 		processIncoming();
@@ -142,25 +133,6 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		return available;
 	}
 
-	public boolean canRequestMore() {
-		// A small number of pipelined requests, i.e. 10, on fast channels,
-		// can result to bad download rates even on local connections!
-		if (avgBlocksTotal() < 1000) {
-			return !socket.hasPartialInputMesssage()
-					&& numOutgoingRequests() < 1;
-		} else {
-			final int REQUESTS = 1 + (int) (avgBlocksTotal() / 1000);
-			return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
-		}
-	}
-
-	public boolean isSharing(Piece piece) {
-		// True if this AND other channels have pending requests.
-		BitSet requests = piece.getPendingRequests();
-		requests.andNot(getPendingRequests(piece));
-		return !requests.isEmpty();
-	}
-
 	public BitSet findNotRequested(Piece piece) {
 		BitSet requests = getPendingRequests(piece);
 		requests.or(piece.getAvailableBlocks());
@@ -170,33 +142,79 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 
 	public BitSet getPendingRequests(Piece piece) {
 		// TODO make unfulfilled an ordered ArrayList and use binary search to
-		// locate the pieces.
+		// locate the requests.
 		BitSet requests = new BitSet(piece.numBlocks());
 		for (Message m : unfulfilled) {
 			if (m.getPieceIndex() == piece.getIndex()) {
-				requests.set(piece.getBlockIndex(m.getBlockBegin()));
+				// The requested length is a multiple of block length.
+				int start = piece.getBlockIndex(m.getBlockBegin());
+				int block_length = piece.getBlockLength(start);
+				int nblocks = m.getBlockLength() / block_length;
+				if (nblocks * block_length < m.getBlockLength())
+					nblocks++;
+				requests.set(start, start + nblocks);
 			}
 		}
 		return requests;
 	}
 
-	public void requestToTheMax(Piece piece, BitSet blocks) {
+	public boolean canRequestMore() {
+		// A small number of pipelined requests, i.e. 10, on fast channels,
+		// can result to bad download rates even on local connections!
+		if (avgBlocksTotal() < 1000) {
+			return !socket.hasPartialInputMesssage()
+					&& numOutgoingRequests() < 1;
+		} else {
+			final int REQUESTS = 2 + (int) (avgBlocksTotal() / (8 * 1024));
+			return numOutgoingRequests() < Math.min(REQUESTS, MAX_REQUESTS);
+		}
+	}
+
+	private int maxRequestLength() {
+		// The length (1k, 4k and 16k) depends on the download speed.
+		double speed = avgBlocksTotal();
+		if (speed < 1024)
+			return 1024;
+		else if (speed < 4 * 1024)
+			return 4 * 1024;
+		else
+			return 16 * 1024;
+	}
+
+	public void addMaximumRequests(Piece piece, BitSet blocks) {
+		// The number of pipelined requests and the length of each
+		// requested block (1k..16k) depend on the download speed.
 		if (!canRequestMore())
 			return;
 		long now = System.nanoTime();
+		int max_length = maxRequestLength();
+		int length;
 		int start_bit = blocks.nextSetBit(0);
-		for (int i = start_bit; i >= 0; i = blocks.nextSetBit(i + 1)) {
+		int end_bit;
+		for (int i = start_bit; i >= 0; i = blocks.nextSetBit(end_bit)) {
+			length = piece.getBlockLength(i);
+			end_bit = i + 1;
+
+			// Include as many consecutive blocks as possible.
+			start_bit = blocks.nextSetBit(end_bit);
+			for (int j = start_bit; j >= 0; j = blocks.nextSetBit(end_bit)) {
+				if (j != end_bit || length >= max_length)
+					break;
+				length += piece.getBlockLength(j);
+				end_bit = j + 1;
+			}
+
 			// May be set multiple times on end-game.
-			piece.setBlockAsRequested(i);
-			piece.setBlockAsReserved(i);
+			piece.setBlocksAsRequested(i, end_bit);
+			piece.setBlocksAsReserved(i, end_bit);
 
 			int index = piece.getIndex();
 			int offset = piece.getBlockOffset(i);
-			int length = piece.getBlockLength(i);
 			Message m = Message.newBlockRequest(index, offset, length);
-			m.setTimestamp((long) (now + 10 * 1e9));
+			m.setTimestamp((long) (now + 20 * 1e9));
 			outgoing.add(m);
 			unfulfilled.add(m);
+
 			if (!canRequestMore())
 				return;
 		}
@@ -336,32 +354,14 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 
 	public void cancelAvailableBlocks(Collection<Piece> pieces) {
 		for (Piece piece : pieces) {
-			cancelPendingRequests(piece.getIndex(), piece.getAvailableBlocks());
+			cancelPendingRequests(piece, piece.getAvailableBlocks());
 		}
 	}
 
-	public void cancelRequestsExcept(Collection<Piece> pieces) {
-		BitSet exclude = new BitSet();
-		for (Piece piece : pieces) {
-			exclude.set(piece.getIndex());
-		}
-
-		BitSet requested = new BitSet();
-		for (Message m : unfulfilled) {
-			requested.set(m.getPieceIndex());
-		}
-
-		int start_bit = requested.nextSetBit(0);
-		for (int i = start_bit; i >= 0; i = requested.nextSetBit(i + 1)) {
-			if (!exclude.get(i))
-				cancelPendingRequests(i, null);
-		}
-	}
-
-	public void cancelPendingRequests(int piece_index, BitSet blocks) {
-		// To remove timed out requests, pass piece_index -1 and null blocks.
-		// To remove every request matching the piece_index, pass null blocks.
-		// To remove specific requests, pass the piece_index and the blocks.
+	public void cancelPendingRequests(Piece piece, BitSet blocks) {
+		// To remove timed out requests, pass null piece and null blocks.
+		// To remove every request of a specific piece, pass null blocks.
+		// To remove specific requests, pass the piece and the blocks.
 
 		long now = System.nanoTime();
 
@@ -369,13 +369,15 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		iter = unfulfilled.iterator();
 		while (iter.hasNext()) {
 			Message m = iter.next();
-			boolean expired = piece_index < 0 && now >= m.getTimestamp();
-			if (expired || m.getPieceIndex() == piece_index) {
+			boolean expired = piece == null && now >= m.getTimestamp();
+			if (expired
+					|| (piece != null && m.getPieceIndex() == piece.getIndex())) {
 				int offset = m.getBlockBegin();
-				int length = m.getBlockLength();
-				int block_index = offset / length;
+				int block_index = offset / 1024;
 				if (blocks != null && !blocks.get(block_index))
 					continue;
+				int piece_index = m.getPieceIndex();
+				int length = m.getBlockLength();
 				outgoing.add(Message.newCancel(piece_index, offset, length));
 				iter.remove();
 			}
@@ -383,10 +385,12 @@ public final class PeerChannel implements Comparable<PeerChannel> {
 		iter = outgoing.iterator();
 		while (iter.hasNext()) {
 			Message m = iter.next();
-			boolean expired = piece_index < 0 && now >= m.getTimestamp();
-			if (m.isBlockRequest()
-					&& (expired || m.getPieceIndex() == piece_index)) {
-				int block_index = m.getBlockBegin() / m.getBlockLength();
+			if (!m.isBlockRequest())
+				continue;
+			boolean expired = piece == null && now >= m.getTimestamp();
+			if (expired
+					|| (piece != null && m.getPieceIndex() == piece.getIndex())) {
+				int block_index = m.getBlockBegin() / 1024;
 				if (blocks != null && !blocks.get(block_index))
 					continue;
 				iter.remove();

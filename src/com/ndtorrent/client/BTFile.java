@@ -80,7 +80,10 @@ public final class BTFile implements Comparable<Long> {
 		// The file is opened for reading and for writing.
 		String parent = new File(name).getParent();
 		new File(parent_path + "./" + (parent != null ? parent : "")).mkdirs();
-		file = new RandomAccessFile(parent_path + "./" + name, "rw");
+		File f = new File(parent_path + "./" + name);
+		f.setReadable(true, true);
+		f.setWritable(true, true);
+		file = new RandomAccessFile(f, "rw");
 		if (file.length() != length) {
 			file.setLength(length);
 		}

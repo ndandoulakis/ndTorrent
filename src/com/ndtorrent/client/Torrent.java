@@ -2,6 +2,8 @@ package com.ndtorrent.client;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -11,6 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class Torrent {
+	private MessageDigest sha1;
+
 	private String name;
 	private int piece_length;
 	private int tail_length;
@@ -31,6 +35,12 @@ public final class Torrent {
 	private ExecutorService writer;
 
 	public Torrent(MetaInfo meta, String storage_location) {
+
+		try {
+			sha1 = MessageDigest.getInstance("SHA-1");
+		} catch (NoSuchAlgorithmException e) {
+		}
+
 		sha1_list = meta.getPieces();
 		num_pieces = sha1_list.length / 20;
 
@@ -155,6 +165,14 @@ public final class Torrent {
 		return (BitSet) unregistered.clone();
 	}
 
+	private boolean validHash(Piece piece) {
+		ByteBuffer data = piece.getData();
+		data.rewind();
+		this.sha1.update(data);
+		ByteBuffer sha1 = ByteBuffer.wrap(sha1_list, piece.getIndex() * 20, 20);
+		return sha1.equals(ByteBuffer.wrap(this.sha1.digest()));
+	}
+
 	public void saveBlock(Message block) {
 		// The corresponding piece must be registered and in partial state,
 		// otherwise the block will be discarded.
@@ -167,14 +185,16 @@ public final class Torrent {
 
 		if (piece.isComplete()) {
 			partial.remove(index);
+
+			if (!validHash(piece)) {
+				unregistered.set(piece.getIndex());
+				System.out.println("Bad hash: " + piece.getIndex());
+				return;
+			}
+
 			writer.submit(new Runnable() {
 				@Override
 				public void run() {
-					if (!piece.isValid()) {
-						// TODO reject
-						return;
-					}
-
 					if (!savePiece(piece)) {
 						// error
 						return;

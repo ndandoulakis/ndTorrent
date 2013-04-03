@@ -38,11 +38,6 @@ public final class Piece {
 			tail_length = block_length;
 	}
 
-	public boolean isValid(/* expected_sha1 */) {
-		// TODO calculate sha1
-		return true;
-	}
-
 	public boolean isComplete() {
 		return getRemainingLength() == 0;
 	}

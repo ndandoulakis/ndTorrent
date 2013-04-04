@@ -308,9 +308,7 @@ public final class BTSocket {
 	}
 
 	public void connect(SocketAddress remote) throws IOException {
-		if (channel.connect(remote)) {
-			channel.finishConnect();
-		}
+		channel.connect(remote);
 	}
 
 	public boolean finishConnect() {

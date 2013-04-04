@@ -103,6 +103,7 @@ public final class Peer extends Thread {
 		while (!stop_requested) {
 			try {
 				// High priority //
+				removeBrokenSockets();
 				socket_selector.selectedKeys().clear();
 				socket_selector.selectNow();
 				processConnectOperations();
@@ -128,7 +129,6 @@ public final class Peer extends Thread {
 				last_time = now;
 
 				registerPendingSockets();
-				removeBrokenSockets();
 				removeFellowSeeders();
 				cancelDelayedRequests();
 				restoreBrokenRequests();

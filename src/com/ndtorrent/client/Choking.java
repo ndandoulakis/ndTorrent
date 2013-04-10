@@ -7,6 +7,9 @@ import java.util.List;
 
 public final class Choking {
 
+	private Choking() {
+	}
+
 	public static void updateAsLeech(List<PeerChannel> channels) {
 		regularLeechUpdate(channels);
 		optimisticUpdate(channels);

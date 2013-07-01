@@ -76,12 +76,12 @@ public abstract class Session {
 
 	public abstract Collection<InetSocketAddress> getPeers();
 
-	final InetSocketAddress peerAddress(ByteBuffer bb, int ofs) {
+	final InetSocketAddress peerAddress(ByteBuffer bb, int ofs, int ip_length) {
 		if (ofs < 0 || ofs >= bb.capacity())
 			return null;
 
-		byte[] ip = ByteBuffer.allocate(4).putInt(bb.getInt(ofs)).array();
-		int port = bb.getShort(ofs + 4) & 0xFFFF;
+		byte[] ip = ByteBuffer.allocate(ip_length).putInt(bb.getInt(ofs)).array();
+		int port = bb.getShort(ofs + ip_length) & 0xFFFF;
 
 		try {
 			return new InetSocketAddress(InetAddress.getByAddress(ip), port);

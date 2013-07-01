@@ -183,7 +183,7 @@ public final class UdpSession extends Session implements Runnable {
 			if (ofs + 6 > MAX_RESPONSE_LENGTH)
 				break;
 
-			result.add(peerAddress(response, ofs));
+			result.add(peerAddress(response, ofs, 4));
 		}
 
 		return result;

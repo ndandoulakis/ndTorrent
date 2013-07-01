@@ -11,6 +11,7 @@ import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -97,6 +98,8 @@ public final class HttpSession extends Session implements Runnable {
 		// URLEncoder converts space character " " into a plus sign "+".
 		// It seems that some trackers have problem with this encoding,
 		// therefore "+" is replaced with "%20".
+		// For some frequent URL problems and their solutions see
+		// http://blog.lunatech.com/2009/02/03/what-every-web-developer-must-know-about-url-encoding
 		try {
 			return URLEncoder.encode(s, "ISO-8859-1").replace("+", "%20");
 		} catch (UnsupportedEncodingException e) {
@@ -170,24 +173,29 @@ public final class HttpSession extends Session implements Runnable {
 	@Override
 	public Collection<InetSocketAddress> getPeers() {
 		Object peers = response.get("peers");
+		Object peers6 = response.get("peers6"); // BEP 7, IPv6 Tracker Extension
 
-		if (peers instanceof String)
-			return parseCompactPeerList(peers);
+		if (peers6 instanceof String)
+			return parseCompactPeerList(peers6, 18);
+		else if (peers instanceof String)
+			return parseCompactPeerList(peers, 6);
 		else if (peers instanceof Iterable<?>)
 			return parsePeerDictionary(peers);
 
-		return null;
+		return Collections.emptyList();
 	}
 
-	private Collection<InetSocketAddress> parseCompactPeerList(Object peers) {
+	private Collection<InetSocketAddress> parseCompactPeerList(Object peers,
+			int addr_lentgh) {
+
 		ArrayList<InetSocketAddress> result = new ArrayList<InetSocketAddress>();
 
 		try {
 			ByteBuffer bb = ByteBuffer.wrap(((String) peers)
 					.getBytes("ISO-8859-1"));
 
-			for (int ofs = 0; ofs < bb.capacity(); ofs += 6) {
-				result.add(peerAddress(bb, ofs));
+			for (int ofs = 0; ofs < bb.capacity(); ofs += addr_lentgh) {
+				result.add(peerAddress(bb, ofs, addr_lentgh - 2));
 			}
 
 		} catch (UnsupportedEncodingException e) {

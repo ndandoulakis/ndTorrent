@@ -5,7 +5,7 @@
 
 The graphical interface is incomplete, torrents can be added only through code.
 
-![](http://nick-d.appspot.com/ndtorrent_a0.png)
+![](https://dl.dropbox.com/s/zeb9tvzdf17zb0u/ndtorrent_a0.png)
 
 ###License
 
